@@ -1,4 +1,4 @@
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 
@@ -17,31 +17,42 @@ export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
-    // Handle invite / magic-link tokens that Supabase processes from the URL hash.
-    // onAuthStateChange fires with SIGNED_IN once the token is exchanged.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) redirectByRole(session.user.id, navigate);
+      if (session?.user) {
+        redirectByRole(session.user.id, navigate);
+      } else {
+        setCheckingSession(false);
+      }
     });
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent) {
     e.preventDefault();
     setError(null);
-    setLoading(true);
+    setSubmitting(true);
 
     const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
     if (authError) {
       setError(authError.message);
-      setLoading(false);
+      setSubmitting(false);
       return;
     }
 
     await redirectByRole(data.user.id, navigate);
+  }
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
 
   return (
@@ -89,10 +100,10 @@ export function LoginPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={submitting}
             className="w-full flex justify-center py-2.5 px-4 rounded-lg text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? 'Signing in…' : 'Sign in'}
+            {submitting ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
       </div>

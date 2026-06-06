@@ -69,7 +69,7 @@ Deno.serve(async (req: Request) => {
     // Use service role client to invite the user (bypasses RLS)
     const adminClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      Deno.env.get('SERVICE_ROLE_KEY')!
     );
 
     const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
