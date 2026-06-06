@@ -15,16 +15,14 @@ export function useAuth(): AuthState {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
-      else setLoading(false);
-    });
-
+    // onAuthStateChange fires immediately with INITIAL_SESSION on subscribe,
+    // giving us the current session without the race condition of running
+    // getSession() and onAuthStateChange in parallel.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
-      else {
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
         setProfile(null);
         setLoading(false);
       }
@@ -39,7 +37,7 @@ export function useAuth(): AuthState {
       .select('*')
       .eq('id', userId)
       .single();
-    setProfile(data);
+    setProfile(data as Profile | null);
     setLoading(false);
   }
 

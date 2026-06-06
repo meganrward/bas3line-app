@@ -146,7 +146,12 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      redeem_voucher: {
+        Args: { voucher_id: string };
+        Returns: string | null;
+      };
+    };
     Enums: Record<string, never>;
   };
 };
