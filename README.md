@@ -1,70 +1,113 @@
-# Getting Started with Create React App
+# Bas3line — Sponsor-Athlete Management Platform
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A web app for Bas3line to manage their sponsored padel athletes. Athletes can post content, earn points, and redeem voucher codes. Sponsors manage athlete profiles, review posts, and configure the points system.
 
-## Available Scripts
+## Tech Stack
 
-In the project directory, you can run:
+- **Frontend**: React 19 + TypeScript
+- **Styling**: Tailwind CSS v3
+- **Routing**: React Router v6
+- **Backend / DB / Auth**: Supabase (PostgreSQL + Row Level Security)
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Local Setup
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 1. Install dependencies
 
-### `npm test`
+```bash
+npm install
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 2. Configure environment variables
 
-### `npm run build`
+```bash
+cp .env.example .env
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Then fill in your Supabase project URL and anon key from the [Supabase dashboard](https://supabase.com/dashboard) → Project Settings → API.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```
+REACT_APP_SUPABASE_URL=https://your-project-id.supabase.co
+REACT_APP_SUPABASE_ANON_KEY=your-anon-key-here
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 3. Apply the database schema
 
-### `npm run eject`
+Make sure you have the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started) installed and your project linked:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```bash
+brew install supabase/tap/supabase
+supabase link --project-ref <your-project-ref>
+supabase db push
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 4. Start the development server
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```bash
+npm start
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Learn More
+---
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Database Migrations
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Schema changes are managed as migration files in `supabase/migrations/`. To make a schema change:
 
-### Code Splitting
+1. Create a new migration file:
+   ```bash
+   supabase migration new <description>
+   # e.g. supabase migration new add_sport_column
+   ```
+2. Write your SQL in the generated file
+3. Apply it to the remote database:
+   ```bash
+   supabase db push
+   ```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+---
 
-### Analyzing the Bundle Size
+## Project Structure
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```
+src/
+  lib/
+    supabase.ts       # Supabase client
+    types.ts          # TypeScript interfaces for all DB tables
+  hooks/              # Shared React hooks (useAuth, etc.)
+  components/
+    auth/             # Login, route protection
+    layout/           # Sponsor and athlete layout shells
+    sponsor/          # Sponsor dashboard components
+    athlete/          # Athlete dashboard components
+    shared/           # Shared UI components
+  App.tsx             # Routes
 
-### Making a Progressive Web App
+supabase/
+  migrations/         # SQL migration files (applied via `supabase db push`)
+  functions/
+    invite-athlete/   # Edge Function for securely inviting athletes by email
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+---
 
-### Advanced Configuration
+## Edge Functions
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+The `invite-athlete` function handles athlete invites securely server-side (the Supabase service role key never touches the browser).
 
-### Deployment
+To deploy:
+```bash
+supabase functions deploy invite-athlete
+supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+---
 
-### `npm run build` fails to minify
+## Roles
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+| Role | Access |
+|---|---|
+| `sponsor` | Full access: manage athletes, packages, post types, review posts, manage vouchers |
+| `athlete` | Own profile, create posts, view points balance, redeem vouchers |
