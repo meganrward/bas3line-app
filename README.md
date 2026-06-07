@@ -1,13 +1,21 @@
 # Bas3line — Sponsor-Athlete Management Platform
 
-A web app for Bas3line to manage their sponsored padel athletes. Athletes can post content, earn points, and redeem voucher codes. Sponsors manage athlete profiles, review posts, and configure the points system.
+A web app for sports brands to manage their sponsored athletes. Athletes log activity, earn points, and redeem rewards. Sponsors manage rosters, review content, and configure their programme.
+
+Built as an MVP for a real padel sponsor, with the goal of making it available to other sports brands in the future.
+
+---
+
+## Want to see it in action?
+
+**Message me on LinkedIn** and I'll set up a demo sponsor account for you to explore — invite athletes, configure post types and point values, review posts, and manage vouchers.
+
+---
 
 ## Tech Stack
 
-- **Frontend**: React 19 + TypeScript
-- **Styling**: Tailwind CSS v3
-- **Routing**: React Router v6
-- **Backend / DB / Auth**: Supabase (PostgreSQL + Row Level Security)
+- **Frontend**: React 19 + TypeScript, Tailwind CSS, React Router
+- **Backend / DB / Auth**: Supabase (PostgreSQL, Row Level Security, Edge Functions)
 
 ---
 
@@ -25,7 +33,7 @@ npm install
 cp .env.example .env
 ```
 
-Then fill in your Supabase project URL and anon key from the [Supabase dashboard](https://supabase.com/dashboard) → Project Settings → API.
+Fill in your values from **Supabase Dashboard → Project Settings → API**:
 
 ```
 REACT_APP_SUPABASE_URL=https://your-project-id.supabase.co
@@ -34,7 +42,7 @@ REACT_APP_SUPABASE_ANON_KEY=your-anon-key-here
 
 ### 3. Apply the database schema
 
-Make sure you have the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started) installed and your project linked:
+Requires the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started):
 
 ```bash
 brew install supabase/tap/supabase
@@ -42,72 +50,48 @@ supabase link --project-ref <your-project-ref>
 supabase db push
 ```
 
-### 4. Start the development server
+### 4. (Optional) Load demo data
+
+Run `supabase/seed.sql` in the **Supabase SQL Editor** to populate packages, post types, and sample voucher codes.
+
+### 5. Create a sponsor account
+
+In **Supabase Dashboard → Authentication → Users → Add user → Create new user**, then in the SQL Editor:
+
+```sql
+update public.profiles set role = 'sponsor' where id = '<your-user-id>';
+```
+
+### 6. Deploy the invite Edge Function
+
+```bash
+supabase functions deploy invite-athlete
+supabase secrets set SERVICE_ROLE_KEY=your-service-role-key
+```
+
+The service role key is under **Dashboard → Project Settings → API → service_role**.
+
+### 7. Start the dev server
 
 ```bash
 npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
 ---
 
 ## Database Migrations
 
-Schema changes are managed as migration files in `supabase/migrations/`. To make a schema change:
+Schema changes live in `supabase/migrations/`. To add one:
 
-1. Create a new migration file:
-   ```bash
-   supabase migration new <description>
-   # e.g. supabase migration new add_sport_column
-   ```
-2. Write your SQL in the generated file
-3. Apply it to the remote database:
-   ```bash
-   supabase db push
-   ```
-
----
-
-## Project Structure
-
-```
-src/
-  lib/
-    supabase.ts       # Supabase client
-    types.ts          # TypeScript interfaces for all DB tables
-  hooks/              # Shared React hooks (useAuth, etc.)
-  components/
-    auth/             # Login, route protection
-    layout/           # Sponsor and athlete layout shells
-    sponsor/          # Sponsor dashboard components
-    athlete/          # Athlete dashboard components
-    shared/           # Shared UI components
-  App.tsx             # Routes
-
-supabase/
-  migrations/         # SQL migration files (applied via `supabase db push`)
-  functions/
-    invite-athlete/   # Edge Function for securely inviting athletes by email
-```
-
----
-
-## Edge Functions
-
-The `invite-athlete` function handles athlete invites securely server-side (the Supabase service role key never touches the browser).
-
-To deploy:
 ```bash
-supabase functions deploy invite-athlete
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+supabase migration new <description>
+supabase db push
 ```
 
 ---
 
-## Roles
+## Running Tests
 
-| Role | Access |
-|---|---|
-| `sponsor` | Full access: manage athletes, packages, post types, review posts, manage vouchers |
-| `athlete` | Own profile, create posts, view points balance, redeem vouchers |
+```bash
+npm test
+```
