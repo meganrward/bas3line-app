@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
 import { VoucherCode } from '../../lib/types';
 
 interface VoucherRow extends VoucherCode {
@@ -7,8 +8,8 @@ interface VoucherRow extends VoucherCode {
 }
 
 export function VoucherManager() {
+  const { sponsorId, loading: authLoading } = useAuth();
   const [vouchers, setVouchers] = useState<VoucherRow[]>([]);
-  const [sponsorId, setSponsorId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [newCode, setNewCode] = useState('');
   const [newDescription, setNewDescription] = useState('');
@@ -16,28 +17,23 @@ export function VoucherManager() {
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function load() {
-    const sponsorResult = await supabase.from('sponsors').select('id').single();
-    const resolvedSponsorId = (sponsorResult.data as any)?.id ?? null;
-    setSponsorId(resolvedSponsorId);
+  const load = useCallback(async () => {
+    if (!sponsorId) { setLoading(false); return; }
+    const result = await supabase
+      .from('voucher_codes')
+      .select('*, profiles(full_name)')
+      .eq('sponsor_id', sponsorId)
+      .order('created_at', { ascending: false });
 
-    if (resolvedSponsorId) {
-      const result = await supabase
-        .from('voucher_codes')
-        .select('*, profiles(full_name)')
-        .eq('sponsor_id', resolvedSponsorId)
-        .order('created_at', { ascending: false });
-
-      const rows = ((result.data ?? []) as any[]).map(row => ({
-        ...row,
-        used_by_name: row.profiles?.full_name ?? null,
-      }));
-      setVouchers(rows);
-    }
+    const rows = ((result.data ?? []) as any[]).map(row => ({
+      ...row,
+      used_by_name: row.profiles?.full_name ?? null,
+    }));
+    setVouchers(rows);
     setLoading(false);
-  }
+  }, [sponsorId]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { if (!authLoading) load(); }, [authLoading, load]);
 
   async function handleAdd(event: React.SyntheticEvent) {
     event.preventDefault();

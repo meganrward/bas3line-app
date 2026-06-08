@@ -1,39 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
 import { SponsorshipPackage } from '../../lib/types';
 
 export function AddAthleteForm() {
   const navigate = useNavigate();
+  const { sponsorId } = useAuth();
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [packageId, setPackageId] = useState('');
   const [packages, setPackages] = useState<SponsorshipPackage[]>([]);
-  const [sponsorId, setSponsorId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!sponsorId) return;
     async function load() {
-      const sponsorResult = await supabase
-        .from('sponsors')
-        .select('id')
-        .single();
-
-      const resolvedSponsorId = (sponsorResult.data as any)?.id ?? null;
-      setSponsorId(resolvedSponsorId);
-
-      if (resolvedSponsorId) {
-        const packagesResult = await supabase
-          .from('sponsorship_packages')
-          .select('*')
-          .eq('sponsor_id', resolvedSponsorId)
-          .order('name');
-        setPackages((packagesResult.data ?? []) as SponsorshipPackage[]);
-      }
+      const packagesResult = await supabase
+        .from('sponsorship_packages')
+        .select('*')
+        .eq('sponsor_id', sponsorId!)
+        .order('name');
+      setPackages((packagesResult.data ?? []) as SponsorshipPackage[]);
     }
     load();
-  }, []);
+  }, [sponsorId]);
 
   async function handleSubmit(event: React.SyntheticEvent) {
     event.preventDefault();

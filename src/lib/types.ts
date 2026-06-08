@@ -19,6 +19,16 @@ export interface Sponsor {
   created_at: string;
 }
 
+export type StaffRole = 'manager' | 'athlete_manager' | 'ambassador_agent';
+
+export interface SponsorStaff {
+  id: string;
+  user_id: string;
+  sponsor_id: string;
+  staff_role: StaffRole;
+  created_at: string;
+}
+
 export interface SponsorshipPackage {
   id: string;
   sponsor_id: string;
@@ -113,6 +123,11 @@ export type Database = {
         Row: Sponsor;
         Insert: Omit<Sponsor, 'id' | 'created_at'>;
         Update: Partial<Omit<Sponsor, 'id' | 'created_at'>>;
+      };
+      sponsor_staff: {
+        Row: SponsorStaff;
+        Insert: Omit<SponsorStaff, 'id' | 'created_at'>;
+        Update: Partial<Omit<SponsorStaff, 'id' | 'created_at'>>;
       };
       sponsorship_packages: {
         Row: SponsorshipPackage;

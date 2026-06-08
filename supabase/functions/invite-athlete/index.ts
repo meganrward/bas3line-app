@@ -8,8 +8,9 @@ const corsHeaders = {
 interface InvitePayload {
   email: string;
   full_name: string;
-  sponsor_id: string;
   package_id?: string;
+  // sponsor_id is no longer accepted from the client — it is derived
+  // server-side from the caller's sponsor_staff record.
 }
 
 Deno.serve(async (req: Request) => {
@@ -18,7 +19,6 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Verify the caller is an authenticated sponsor
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -27,7 +27,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Use anon key client to verify the caller's session and role
+    // Verify the caller's session and that they are sponsor-role staff
     const callerClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
@@ -42,25 +42,27 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { data: profile } = await callerClient
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
+    // Derive sponsor_id from the caller's sponsor_staff record
+    const { data: staffRow } = await callerClient
+      .from('sponsor_staff')
+      .select('sponsor_id')
+      .eq('user_id', user.id)
       .single();
 
-    if (profile?.role !== 'sponsor') {
-      return new Response(JSON.stringify({ error: 'Forbidden: sponsors only' }), {
+    if (!staffRow?.sponsor_id) {
+      return new Response(JSON.stringify({ error: 'Forbidden: no sponsor staff record found' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Parse request body
-    const payload: InvitePayload = await req.json();
-    const { email, full_name, sponsor_id, package_id } = payload;
+    const sponsorId = staffRow.sponsor_id;
 
-    if (!email || !full_name || !sponsor_id) {
-      return new Response(JSON.stringify({ error: 'email, full_name, and sponsor_id are required' }), {
+    const payload: InvitePayload = await req.json();
+    const { email, full_name, package_id } = payload;
+
+    if (!email || !full_name) {
+      return new Response(JSON.stringify({ error: 'email and full_name are required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -84,13 +86,12 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Pre-create the athlete_profiles row so the sponsor can fill in details immediately
     const athleteId = inviteData.user.id;
     const { error: profileError } = await adminClient
       .from('athlete_profiles')
       .insert({
         id: athleteId,
-        sponsor_id,
+        sponsor_id: sponsorId,
         package_id: package_id ?? null,
       });
 

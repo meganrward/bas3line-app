@@ -1,33 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
 import { SponsorshipPackage } from '../../lib/types';
 
 export function PackageManager() {
+  const { sponsorId, loading: authLoading } = useAuth();
   const [packages, setPackages] = useState<SponsorshipPackage[]>([]);
-  const [sponsorId, setSponsorId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function load() {
-    const sponsorResult = await supabase.from('sponsors').select('id').single();
-    const resolvedSponsorId = (sponsorResult.data as any)?.id ?? null;
-    setSponsorId(resolvedSponsorId);
-
-    if (resolvedSponsorId) {
-      const result = await supabase
-        .from('sponsorship_packages')
-        .select('*')
-        .eq('sponsor_id', resolvedSponsorId)
-        .order('name');
-      setPackages((result.data ?? []) as SponsorshipPackage[]);
-    }
+  const load = useCallback(async () => {
+    if (!sponsorId) { setLoading(false); return; }
+    const result = await supabase
+      .from('sponsorship_packages')
+      .select('*')
+      .eq('sponsor_id', sponsorId)
+      .order('name');
+    setPackages((result.data ?? []) as SponsorshipPackage[]);
     setLoading(false);
-  }
+  }, [sponsorId]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { if (!authLoading) load(); }, [authLoading, load]);
 
   async function handleAdd(event: React.SyntheticEvent) {
     event.preventDefault();
