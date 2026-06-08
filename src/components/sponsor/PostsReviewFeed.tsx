@@ -2,20 +2,24 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { loadPendingPosts } from '../../lib/queries';
 import { PendingPost } from '../../lib/queryTypes';
+import { useAuth } from '../../hooks/useAuth';
 
 export function PostsReviewFeed() {
+  const { sponsorId, loading: authLoading } = useAuth();
   const [posts, setPosts] = useState<PendingPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [actioning, setActioning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
     async function load() {
-      setPosts(await loadPendingPosts());
+      if (!sponsorId) { setLoading(false); return; }
+      setPosts(await loadPendingPosts(sponsorId));
       setLoading(false);
     }
     load();
-  }, []);
+  }, [authLoading, sponsorId]);
 
   async function handleApprove(postId: string) {
     setError(null);

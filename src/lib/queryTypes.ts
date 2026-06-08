@@ -13,7 +13,6 @@ export interface AthleteProfileData {
   ranking: string | null;
   clubs: string | null;
   training_location: string | null;
-  racket_brand: string | null;
   racket_model: string | null;
   instagram_handle: string | null;
   points_balance: number;

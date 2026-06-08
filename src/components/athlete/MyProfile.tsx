@@ -63,7 +63,7 @@ export function MyProfile() {
           <h2 className="text-sm font-semibold text-gray-700 mb-3">Sport</h2>
           <dl className="grid grid-cols-2 gap-4">
             <Field label="Ranking" value={profileData.ranking} />
-            <Field label="Racket" value={profileData.racket_brand && profileData.racket_model ? `${profileData.racket_brand} ${profileData.racket_model}` : profileData.racket_brand ?? profileData.racket_model} />
+            <Field label="Racket" value={profileData.racket_model} />
           </dl>
         </div>
 
@@ -71,7 +71,9 @@ export function MyProfile() {
           <h2 className="text-sm font-semibold text-gray-700 mb-3">Location</h2>
           <dl className="grid grid-cols-2 gap-4">
             <Field label="Trains at" value={profileData.training_location} />
-            <Field label="Clubs" value={profileData.clubs} />
+            {profileData.package_name?.toLowerCase().includes('coach') && (
+              <Field label="Coaches at" value={profileData.clubs} />
+            )}
           </dl>
         </div>
 
