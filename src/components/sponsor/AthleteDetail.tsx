@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { SponsorshipPackage } from '../../lib/types';
+import { useAuth } from '../../hooks/useAuth';
+import { loadAthleteProfile, loadPackages } from '../../lib/queries';
 
 interface AthleteFormState {
   full_name: string;
@@ -40,6 +42,7 @@ const inputClass = 'block w-full rounded-lg border-gray-300 shadow-sm focus:bord
 
 export function AthleteDetail() {
   const { id } = useParams<{ id: string }>();
+  const { sponsorId } = useAuth();
   const [form, setForm] = useState<AthleteFormState>(emptyForm);
   const [packages, setPackages] = useState<SponsorshipPackage[]>([]);
   const [pointsBalance, setPointsBalance] = useState(0);
@@ -50,23 +53,15 @@ export function AthleteDetail() {
 
   useEffect(() => {
     async function load() {
-      const [athleteResult, packagesResult] = await Promise.all([
-        supabase
-          .from('athlete_profiles')
-          .select('*, profiles(full_name), sponsorship_packages(name)')
-          .eq('id', id!)
-          .single(),
-        supabase
-          .from('sponsorship_packages')
-          .select('*')
-          .order('name'),
+      const [athlete, packages] = await Promise.all([
+        loadAthleteProfile(id!),
+        sponsorId ? loadPackages(sponsorId) : Promise.resolve([]),
       ]);
 
-      if (athleteResult.error) { setError(athleteResult.error.message); setLoading(false); return; }
+      if (!athlete) { setError('Athlete not found'); setLoading(false); return; }
 
-      const athlete = athleteResult.data as any;
       setForm({
-        full_name: athlete.profiles?.full_name ?? '',
+        full_name: athlete.full_name ?? '',
         bio: athlete.bio ?? '',
         ranking: athlete.ranking ?? '',
         clubs: athlete.clubs ?? '',
@@ -77,7 +72,7 @@ export function AthleteDetail() {
         package_id: athlete.package_id ?? '',
       });
       setPointsBalance(athlete.points_balance ?? 0);
-      setPackages((packagesResult.data ?? []) as SponsorshipPackage[]);
+      setPackages(packages);
       setLoading(false);
     }
     load();

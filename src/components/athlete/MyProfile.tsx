@@ -1,19 +1,7 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
-
-interface ProfileData {
-  full_name: string | null;
-  bio: string | null;
-  ranking: string | null;
-  clubs: string | null;
-  training_location: string | null;
-  racket_brand: string | null;
-  racket_model: string | null;
-  instagram_handle: string | null;
-  points_balance: number;
-  package_name: string | null;
-}
+import { loadMyAthleteProfile } from '../../lib/queries';
+import { AthleteProfileData } from '../../lib/queryTypes';
 
 function Field({ label, value }: { label: string; value: string | null }) {
   return (
@@ -26,7 +14,7 @@ function Field({ label, value }: { label: string; value: string | null }) {
 
 export function MyProfile() {
   const { user } = useAuth();
-  const [profileData, setProfileData] = useState<ProfileData | null>(null);
+  const [profileData, setProfileData] = useState<AthleteProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,33 +22,12 @@ export function MyProfile() {
     if (!user) return;
 
     async function load() {
-      const result = await supabase
-        .from('athlete_profiles')
-        .select(`
-          bio, ranking, clubs, training_location,
-          racket_brand, racket_model, instagram_handle, points_balance,
-          profiles!inner(full_name),
-          sponsorship_packages(name)
-        `)
-        .eq('id', user!.id)
-        .maybeSingle();
-
-      if (result.error) { setError(result.error.message); setLoading(false); return; }
-      if (!result.data) { setError('Profile not set up yet — ask your sponsor to check the invite.'); setLoading(false); return; }
-
-      const athleteProfile = result.data as any;
-      setProfileData({
-        full_name: athleteProfile.profiles?.full_name ?? null,
-        bio: athleteProfile.bio,
-        ranking: athleteProfile.ranking,
-        clubs: athleteProfile.clubs,
-        training_location: athleteProfile.training_location,
-        racket_brand: athleteProfile.racket_brand,
-        racket_model: athleteProfile.racket_model,
-        instagram_handle: athleteProfile.instagram_handle,
-        points_balance: athleteProfile.points_balance,
-        package_name: athleteProfile.sponsorship_packages?.name ?? null,
-      });
+      const data = await loadMyAthleteProfile(user!.id);
+      if (!data) {
+        setError('Profile not set up yet — ask your sponsor to check the invite.');
+      } else {
+        setProfileData(data);
+      }
       setLoading(false);
     }
 

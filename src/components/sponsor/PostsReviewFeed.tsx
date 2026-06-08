@@ -1,16 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-
-interface PendingPost {
-  id: string;
-  title: string;
-  content: string | null;
-  link_url: string | null;
-  created_at: string;
-  athlete_name: string | null;
-  post_type_name: string;
-  points_value: number;
-}
+import { loadPendingPosts } from '../../lib/queries';
+import { PendingPost } from '../../lib/queryTypes';
 
 export function PostsReviewFeed() {
   const [posts, setPosts] = useState<PendingPost[]>([]);
@@ -18,29 +9,13 @@ export function PostsReviewFeed() {
   const [actioning, setActioning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function load() {
-    const result = await supabase
-      .from('posts')
-      .select('id, title, content, link_url, created_at, profiles(full_name), post_types(name, points_value)')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: true });
-
-    const rows = ((result.data ?? []) as any[]).map(row => ({
-      id: row.id,
-      title: row.title,
-      content: row.content,
-      link_url: row.link_url,
-      created_at: row.created_at,
-      athlete_name: row.profiles?.full_name ?? null,
-      post_type_name: row.post_types?.name ?? '—',
-      points_value: row.post_types?.points_value ?? 0,
-    }));
-
-    setPosts(rows);
-    setLoading(false);
-  }
-
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    async function load() {
+      setPosts(await loadPendingPosts());
+      setLoading(false);
+    }
+    load();
+  }, []);
 
   async function handleApprove(postId: string) {
     setError(null);

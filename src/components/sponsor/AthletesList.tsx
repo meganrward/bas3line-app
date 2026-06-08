@@ -1,33 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
-
-interface AthleteRow {
-  id: string;
-  full_name: string | null;
-  package_name: string | null;
-  points_balance: number;
-}
+import { loadAthletes } from '../../lib/queries';
+import { AthleteListItem } from '../../lib/queryTypes';
 
 export function AthletesList() {
-  const [athletes, setAthletes] = useState<AthleteRow[]>([]);
+  const [athletes, setAthletes] = useState<AthleteListItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const result = await supabase
-        .from('athlete_profiles')
-        .select('id, points_balance, profiles(full_name), sponsorship_packages(name)')
-        .order('id');
-
-      const rows = ((result.data ?? []) as any[]).map(row => ({
-        id: row.id,
-        full_name: row.profiles?.full_name ?? null,
-        package_name: row.sponsorship_packages?.name ?? null,
-        points_balance: row.points_balance,
-      }));
-
-      setAthletes(rows);
+      setAthletes(await loadAthletes());
       setLoading(false);
     }
     load();

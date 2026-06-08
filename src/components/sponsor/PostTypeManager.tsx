@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { PostType } from '../../lib/types';
+import { loadPostTypes } from '../../lib/queries';
 
 export function PostTypeManager() {
   const { sponsorId, loading: authLoading } = useAuth();
@@ -13,18 +14,17 @@ export function PostTypeManager() {
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!sponsorId) { setLoading(false); return; }
-    const result = await supabase
-      .from('post_types')
-      .select('*')
-      .eq('sponsor_id', sponsorId)
-      .order('name');
-    setPostTypes((result.data ?? []) as PostType[]);
-    setLoading(false);
-  }, [sponsorId]);
+  useEffect(() => {
+    if (authLoading) return;
 
-  useEffect(() => { if (!authLoading) load(); }, [authLoading, load]);
+    async function load() {
+      if (!sponsorId) { setLoading(false); return; }
+      setPostTypes(await loadPostTypes(sponsorId));
+      setLoading(false);
+    }
+
+    load();
+  }, [authLoading, sponsorId]);
 
   async function handleAdd(event: React.SyntheticEvent) {
     event.preventDefault();
@@ -46,7 +46,7 @@ export function PostTypeManager() {
       setNewName('');
       setNewPoints('');
       setNewDescription('');
-      await load();
+      setPostTypes(await loadPostTypes(sponsorId));
     }
     setAdding(false);
   }

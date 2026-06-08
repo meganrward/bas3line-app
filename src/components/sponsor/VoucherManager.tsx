@@ -1,11 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
-import { VoucherCode } from '../../lib/types';
-
-interface VoucherRow extends VoucherCode {
-  used_by_name: string | null;
-}
+import { loadVouchers } from '../../lib/queries';
+import { VoucherRow } from '../../lib/queryTypes';
 
 export function VoucherManager() {
   const { sponsorId, loading: authLoading } = useAuth();
@@ -17,23 +14,17 @@ export function VoucherManager() {
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!sponsorId) { setLoading(false); return; }
-    const result = await supabase
-      .from('voucher_codes')
-      .select('*, profiles(full_name)')
-      .eq('sponsor_id', sponsorId)
-      .order('created_at', { ascending: false });
+  useEffect(() => {
+    if (authLoading) return;
 
-    const rows = ((result.data ?? []) as any[]).map(row => ({
-      ...row,
-      used_by_name: row.profiles?.full_name ?? null,
-    }));
-    setVouchers(rows);
-    setLoading(false);
-  }, [sponsorId]);
+    async function load() {
+      if (!sponsorId) { setLoading(false); return; }
+      setVouchers(await loadVouchers(sponsorId));
+      setLoading(false);
+    }
 
-  useEffect(() => { if (!authLoading) load(); }, [authLoading, load]);
+    load();
+  }, [authLoading, sponsorId]);
 
   async function handleAdd(event: React.SyntheticEvent) {
     event.preventDefault();
@@ -54,7 +45,7 @@ export function VoucherManager() {
       setNewCode('');
       setNewDescription('');
       setNewPoints('');
-      await load();
+      setVouchers(await loadVouchers(sponsorId));
     }
     setAdding(false);
   }

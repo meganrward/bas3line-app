@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/supabase'; // still used for post insert
 import { useAuth } from '../../hooks/useAuth';
+import { loadAthleteSponsorId, loadActivePostTypes } from '../../lib/queries';
 import { PostType } from '../../lib/types';
 
 export function CreatePost() {
@@ -17,29 +18,15 @@ export function CreatePost() {
   useEffect(() => {
     if (!user) return;
 
-    async function loadPostTypes() {
-      const { data: athleteProfileData } = await supabase
-        .from('athlete_profiles')
-        .select('sponsor_id')
-        .eq('id', user!.id)
-        .single();
-
-      const sponsorId = (athleteProfileData as { sponsor_id: string } | null)?.sponsor_id;
+    async function load() {
+      const sponsorId = await loadAthleteSponsorId(user!.id);
       if (!sponsorId) return;
-
-      const { data } = await supabase
-        .from('post_types')
-        .select('*')
-        .eq('sponsor_id', sponsorId)
-        .eq('is_active', true)
-        .order('name');
-
-      const rows = (data ?? []) as unknown as PostType[];
+      const rows = await loadActivePostTypes(sponsorId);
       setPostTypes(rows);
       if (rows[0]) setSelectedTypeId(rows[0].id);
     }
 
-    loadPostTypes();
+    load();
   }, [user]);
 
   async function handleSubmit(e: React.SyntheticEvent) {

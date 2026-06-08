@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
+import { loadAthleteVouchers } from '../../lib/queries';
 import { VoucherCode } from '../../lib/types';
 
 interface VoucherWithStatus extends VoucherCode {
@@ -19,22 +20,10 @@ export function VoucherRedemption() {
 
   async function load() {
     if (!user) return;
-
-    const [athleteProfileResult, voucherData] = await Promise.all([
-      supabase.from('athlete_profiles').select('points_balance').eq('id', user.id).single(),
-      supabase.from('voucher_codes').select('*').order('points_required'),
-    ]);
-
-    const currentBalance = (athleteProfileResult.data as any)?.points_balance ?? 0;
-    setBalance(currentBalance);
-
-    const allVouchers = (voucherData.data ?? []) as VoucherCode[];
-    setVouchers(
-      allVouchers
-        .filter(voucher => !voucher.is_used)
-        .map(voucher => ({ ...voucher, canAfford: currentBalance >= voucher.points_required }))
-    );
-    setRedeemedVouchers(allVouchers.filter(voucher => voucher.is_used && voucher.used_by === user.id));
+    const data = await loadAthleteVouchers(user.id);
+    setBalance(data.balance);
+    setVouchers(data.available);
+    setRedeemedVouchers(data.redeemed);
     setLoading(false);
   }
 

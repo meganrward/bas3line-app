@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
+import { loadPointsDashboard } from '../../lib/queries';
 import { PointsTransaction } from '../../lib/types';
 
 export function PointsDashboard() {
@@ -13,21 +13,9 @@ export function PointsDashboard() {
     if (!user) return;
 
     async function load() {
-      const [athleteProfileResult, transactionData] = await Promise.all([
-        supabase
-          .from('athlete_profiles')
-          .select('points_balance')
-          .eq('id', user!.id)
-          .single(),
-        supabase
-          .from('points_transactions')
-          .select('*')
-          .eq('athlete_id', user!.id)
-          .order('created_at', { ascending: false }),
-      ]);
-
-      setBalance((athleteProfileResult.data as any)?.points_balance ?? 0);
-      setTransactions((transactionData.data ?? []) as PointsTransaction[]);
+      const { balance, transactions } = await loadPointsDashboard(user!.id);
+      setBalance(balance);
+      setTransactions(transactions);
       setLoading(false);
     }
 

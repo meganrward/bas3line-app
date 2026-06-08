@@ -1,18 +1,8 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
+import { loadMyPosts } from '../../lib/queries';
+import { PostRow } from '../../lib/queryTypes';
 import { PostStatus } from '../../lib/types';
-
-interface PostRow {
-  id: string;
-  title: string;
-  content: string | null;
-  link_url: string | null;
-  status: PostStatus;
-  points_awarded: number | null;
-  created_at: string;
-  post_type_name: string;
-}
 
 const statusStyles: Record<PostStatus, { label: string; classes: string }> = {
   pending:  { label: 'Pending',  classes: 'bg-yellow-50 text-yellow-700' },
@@ -29,18 +19,7 @@ export function MyPosts() {
     if (!user) return;
 
     async function load() {
-      const { data } = await supabase
-        .from('posts')
-        .select('id, title, content, link_url, status, points_awarded, created_at, post_types(name)')
-        .eq('athlete_id', user!.id)
-        .order('created_at', { ascending: false });
-
-      setPosts(
-        (data ?? []).map((row: any) => ({
-          ...row,
-          post_type_name: row.post_types?.name ?? '—',
-        }))
-      );
+      setPosts(await loadMyPosts(user!.id));
       setLoading(false);
     }
 
