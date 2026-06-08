@@ -1,14 +1,6 @@
-# Bas3line — Sponsor-Athlete Management Platform
+# Sponsor/Athlete Management Platform
 
-A web app for sports brands to manage their sponsored athletes. Athletes log activity, earn points, and redeem rewards. Sponsors manage rosters, review content, and configure their programme.
-
-Built as an MVP for a real padel sponsor, with the goal of making it available to other sports brands in the future.
-
----
-
-## Want to see it in action?
-
-**Message me on LinkedIn** and I'll set up a demo sponsor account for you to explore — invite athletes, configure post types and point values, review posts, and manage vouchers.
+A web app for the sports brand BAS3LINE to manage their sponsored athletes. Athletes log activity, earn points, and redeem rewards. Sponsors manage rosters, review content, and configure their programme.
 
 ---
 
