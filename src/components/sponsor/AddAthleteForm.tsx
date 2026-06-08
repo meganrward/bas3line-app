@@ -37,15 +37,18 @@ export function AddAthleteForm() {
       body: {
         email,
         full_name: fullName,
-        sponsor_id: sponsorId,
         package_id: packageId || undefined,
+        // sponsor_id is derived server-side from the caller's sponsor_staff record
       },
     });
 
+    // supabase.functions.invoke puts the response body in result.data on success,
+    // but on non-2xx it may be in result.data OR only in result.error.message.
     const responseData = result.data as { user_id?: string; error?: string } | null;
+    const errorMessage = responseData?.error ?? (result.error ? result.error.message : null);
 
-    if (result.error || responseData?.error) {
-      setError(responseData?.error ?? result.error?.message ?? 'Invite failed');
+    if (errorMessage) {
+      setError(errorMessage);
       setSubmitting(false);
       return;
     }
