@@ -43,9 +43,10 @@ export function MyProfile() {
           sponsorship_packages(name)
         `)
         .eq('id', user!.id)
-        .single();
+        .maybeSingle();
 
       if (result.error) { setError(result.error.message); setLoading(false); return; }
+      if (!result.data) { setError('Profile not set up yet — ask your sponsor to check the invite.'); setLoading(false); return; }
 
       const athleteProfile = result.data as any;
       setProfileData({

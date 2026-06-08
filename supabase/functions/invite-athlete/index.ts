@@ -47,7 +47,7 @@ Deno.serve(async (req: Request) => {
       .from('sponsor_staff')
       .select('sponsor_id')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (!staffRow?.sponsor_id) {
       return new Response(JSON.stringify({ error: 'Forbidden: no sponsor staff record found' }), {

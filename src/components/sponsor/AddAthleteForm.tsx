@@ -42,20 +42,15 @@ export function AddAthleteForm() {
       },
     });
 
-    if (result.error) {
-      setError(result.error.message);
+    const responseData = result.data as { user_id?: string; error?: string } | null;
+
+    if (result.error || responseData?.error) {
+      setError(responseData?.error ?? result.error?.message ?? 'Invite failed');
       setSubmitting(false);
       return;
     }
 
-    const responseData = result.data as { user_id?: string; error?: string };
-    if (responseData?.error) {
-      setError(responseData.error);
-      setSubmitting(false);
-      return;
-    }
-
-    navigate(`/sponsor/athletes/${responseData.user_id}`);
+    navigate(`/sponsor/athletes/${responseData?.user_id}`);
   }
 
   return (
