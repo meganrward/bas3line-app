@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/bas3line-app/static/css/main.0700f4a0.css",
+    "main.js": "/bas3line-app/static/js/main.8fa9bd02.js",
+    "static/js/453.70fa7d81.chunk.js": "/bas3line-app/static/js/453.70fa7d81.chunk.js",
+    "index.html": "/bas3line-app/index.html",
+    "main.0700f4a0.css.map": "/bas3line-app/static/css/main.0700f4a0.css.map",
+    "main.8fa9bd02.js.map": "/bas3line-app/static/js/main.8fa9bd02.js.map",
+    "453.70fa7d81.chunk.js.map": "/bas3line-app/static/js/453.70fa7d81.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.0700f4a0.css",
+    "static/js/main.8fa9bd02.js"
+  ]
+}
