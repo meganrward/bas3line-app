@@ -2,6 +2,7 @@
   "name": "bas3line-app",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://meganrward.github.io/bas3line-app",
   "dependencies": {
     "@supabase/supabase-js": "^2.107.0",
     "@testing-library/dom": "^10.4.1",

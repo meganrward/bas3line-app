@@ -112,26 +112,27 @@ export async function getAthleteIds(sponsorId: string): Promise<string[]> {
   return ((result.data ?? []) as any[]).map((row) => row.id);
 }
 
-export async function loadPendingPosts(sponsorId: string): Promise<PendingPost[]> {
+export async function loadPendingPosts(
+  sponsorId: string,
+): Promise<PendingPost[]> {
   const athleteIds = await getAthleteIds(sponsorId);
   if (athleteIds.length === 0) return [];
 
   const result = await supabase
     .from("posts")
     .select(
-      "id, title, content, link_url, created_at, profiles(full_name), post_types(name, points_value)",
+      "id, title, content, link_url, created_at, profiles!posts_athlete_id_fkey(full_name), post_types(name, points_value)",
     )
     .eq("status", "pending")
     .in("athlete_id", athleteIds)
     .order("created_at", { ascending: true });
-
   return ((result.data ?? []) as any[]).map((row) => ({
     id: row.id,
     title: row.title,
     content: row.content,
     link_url: row.link_url,
     created_at: row.created_at,
-    athlete_name: row.profiles?.full_name ?? null,
+    athlete_name: row.profiles_posts_athlete_id_fkey?.full_name ?? null,
     post_type_name: row.post_types?.name ?? "—",
     points_value: row.post_types?.points_value ?? 0,
   }));
