@@ -86,7 +86,7 @@ export function AthleteDetail() {
       setLoading(false);
     }
     load();
-  }, [id]);
+  }, [id, sponsorId]);
 
   async function handleSave(event: React.SyntheticEvent) {
     event.preventDefault();
@@ -238,7 +238,10 @@ export function AthleteDetail() {
             />
           </Field>
 
-          {packages.find((pkg) => pkg.id === form.package_id)?.name.toLowerCase().includes("coach") && (
+          {packages
+            .find((pkg) => pkg.id === form.package_id)
+            ?.name.toLowerCase()
+            .includes("coach") && (
             <Field label="Coaches at">
               <input
                 type="text"
