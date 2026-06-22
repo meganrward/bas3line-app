@@ -1,6 +1,6 @@
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
-import { UserRole } from '../../lib/types';
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
+import { UserRole } from "../../lib/types";
 
 interface Props {
   role: UserRole;
@@ -13,14 +13,19 @@ export function ProtectedRoute({ role, children }: Props) {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+        <div className="spinner" />
       </div>
     );
   }
 
   if (!user) return <Navigate to="/login" replace />;
   if (profile?.role !== role) {
-    return <Navigate to={profile?.role === 'sponsor' ? '/sponsor' : '/athlete'} replace />;
+    return (
+      <Navigate
+        to={profile?.role === "sponsor" ? "/sponsor" : "/athlete"}
+        replace
+      />
+    );
   }
 
   return <>{children}</>;

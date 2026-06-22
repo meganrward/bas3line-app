@@ -5,16 +5,18 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          900: '#0c4a6e',
+          navy:   '#211e69',
+          blue:   '#1778f1',
+          yellow: '#efff00',
+          orange: '#f94a14',
+          white:  '#ffffff',
+          black:  '#000000',
         },
+      },
+      letterSpacing: {
+        brand: '0.03em',
       },
     },
   },
   plugins: [require('@tailwindcss/forms')],
 }
-

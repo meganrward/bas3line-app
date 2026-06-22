@@ -15,13 +15,14 @@ export function PackageManager() {
 
   useEffect(() => {
     if (authLoading) return;
-
     async function load() {
-      if (!sponsorId) { setLoading(false); return; }
+      if (!sponsorId) {
+        setLoading(false);
+        return;
+      }
       setPackages(await loadPackages(sponsorId));
       setLoading(false);
     }
-
     load();
   }, [authLoading, sponsorId]);
 
@@ -62,19 +63,16 @@ export function PackageManager() {
   if (loading)
     return (
       <div className="flex justify-center py-12">
-        <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+        <div className="spinner" />
       </div>
     );
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Packages</h1>
+      <h1 className="heading-page mb-6">Packages</h1>
 
-      <form
-        onSubmit={handleAdd}
-        className="bg-white rounded-xl shadow-sm p-5 mb-6 space-y-3"
-      >
-        <h2 className="text-sm font-semibold text-gray-700">Add package</h2>
+      <form onSubmit={handleAdd} className="card p-5 mb-6 space-y-3">
+        <h2 className="heading-section">Add package</h2>
         <div className="grid grid-cols-2 gap-3">
           <input
             type="text"
@@ -82,23 +80,19 @@ export function PackageManager() {
             placeholder="Name (e.g. Elite)"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
+            className="input"
           />
           <input
             type="text"
             placeholder="Description (optional)"
             value={newDescription}
             onChange={(e) => setNewDescription(e.target.value)}
-            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
+            className="input"
           />
         </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="alert-error">{error}</p>}
         <div className="flex justify-end">
-          <button
-            type="submit"
-            disabled={adding}
-            className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50 transition-colors"
-          >
+          <button type="submit" disabled={adding} className="btn-primary">
             {adding ? "Adding…" : "Add package"}
           </button>
         </div>
@@ -107,7 +101,7 @@ export function PackageManager() {
       {packages.length === 0 ? (
         <p className="text-sm text-gray-500">No packages yet.</p>
       ) : (
-        <ul className="bg-white rounded-xl shadow-sm divide-y divide-gray-100">
+        <ul className="card divide-y divide-gray-100">
           {packages.map((pkg) => (
             <li
               key={pkg.id}
@@ -125,7 +119,7 @@ export function PackageManager() {
               </div>
               <button
                 onClick={() => handleDelete(pkg.id)}
-                className="text-xs text-red-500 hover:text-red-700 transition-colors"
+                className="btn-danger-text"
               >
                 Delete
               </button>

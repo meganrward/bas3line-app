@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../hooks/useAuth';
-import { SponsorshipPackage } from '../../lib/types';
+import React, { useEffect, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { supabase } from "../../lib/supabase";
+import { useAuth } from "../../hooks/useAuth";
+import { SponsorshipPackage } from "../../lib/types";
 
 export function AddAthleteForm() {
   const navigate = useNavigate();
   const { sponsorId } = useAuth();
-  const [email, setEmail] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [packageId, setPackageId] = useState('');
+  const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [packageId, setPackageId] = useState("");
   const [packages, setPackages] = useState<SponsorshipPackage[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,10 +18,10 @@ export function AddAthleteForm() {
     if (!sponsorId) return;
     async function load() {
       const packagesResult = await supabase
-        .from('sponsorship_packages')
-        .select('*')
-        .eq('sponsor_id', sponsorId!)
-        .order('name');
+        .from("sponsorship_packages")
+        .select("*")
+        .eq("sponsor_id", sponsorId!)
+        .order("name");
       setPackages((packagesResult.data ?? []) as SponsorshipPackage[]);
     }
     load();
@@ -29,23 +29,27 @@ export function AddAthleteForm() {
 
   async function handleSubmit(event: React.SyntheticEvent) {
     event.preventDefault();
-    if (!sponsorId) { setError('Sponsor not found.'); return; }
+    if (!sponsorId) {
+      setError("Sponsor not found.");
+      return;
+    }
     setError(null);
     setSubmitting(true);
 
-    const result = await supabase.functions.invoke('invite-athlete', {
+    const result = await supabase.functions.invoke("invite-athlete", {
       body: {
         email,
         full_name: fullName,
         package_id: packageId || undefined,
-        // sponsor_id is derived server-side from the caller's sponsor_staff record
       },
     });
 
-    // supabase.functions.invoke puts the response body in result.data on success,
-    // but on non-2xx it may be in result.data OR only in result.error.message.
-    const responseData = result.data as { user_id?: string; error?: string } | null;
-    const errorMessage = responseData?.error ?? (result.error ? result.error.message : null);
+    const responseData = result.data as {
+      user_id?: string;
+      error?: string;
+    } | null;
+    const errorMessage =
+      responseData?.error ?? (result.error ? result.error.message : null);
 
     if (errorMessage) {
       setError(errorMessage);
@@ -59,61 +63,72 @@ export function AddAthleteForm() {
   return (
     <div className="max-w-lg">
       <div className="flex items-center gap-3 mb-6">
-        <Link to="/sponsor/athletes" className="text-sm text-gray-400 hover:text-gray-600">← Athletes</Link>
+        <Link
+          to="/sponsor/athletes"
+          className="text-sm text-gray-400 hover:text-gray-600"
+        >
+          ← Athletes
+        </Link>
         <span className="text-gray-300">/</span>
-        <h1 className="text-2xl font-bold text-gray-900">Invite athlete</h1>
+        <h1 className="heading-page">Invite athlete</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm p-6 space-y-5">
+      <form onSubmit={handleSubmit} className="card p-6 space-y-5">
         <p className="text-sm text-gray-500">
-          The athlete will receive an email with a link to set their password and access the portal.
+          The athlete will receive an email with a link to set their password
+          and access the portal.
         </p>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Full name <span className="text-red-500">*</span></label>
+          <label className="input-label">
+            Full name <span className="text-red-500">*</span>
+          </label>
           <input
             type="text"
             required
             value={fullName}
-            onChange={e => setFullName(e.target.value)}
-            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
+            onChange={(e) => setFullName(e.target.value)}
+            className="input"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email address <span className="text-red-500">*</span></label>
+          <label className="input-label">
+            Email address <span className="text-red-500">*</span>
+          </label>
           <input
             type="email"
             required
             value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
+            onChange={(e) => setEmail(e.target.value)}
+            className="input"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Package <span className="text-gray-400 font-normal">(optional)</span></label>
+          <label className="input-label">
+            Package{" "}
+            <span className="text-gray-400 font-normal">(optional)</span>
+          </label>
           <select
             value={packageId}
-            onChange={e => setPackageId(e.target.value)}
-            className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm"
+            onChange={(e) => setPackageId(e.target.value)}
+            className="input"
           >
             <option value="">No package</option>
-            {packages.map(pkg => (
-              <option key={pkg.id} value={pkg.id}>{pkg.name}</option>
+            {packages.map((pkg) => (
+              <option key={pkg.id} value={pkg.id}>
+                {pkg.name}
+              </option>
             ))}
           </select>
         </div>
 
-        {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+        {error && <p className="alert-error">{error}</p>}
 
         <div className="flex justify-end">
-          <button
-            type="submit"
-            disabled={submitting}
-            className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 disabled:opacity-50 transition-colors"
-          >
-            {submitting ? 'Sending invite…' : 'Send invite'}
+          <button type="submit" disabled={submitting} className="btn-primary">
+            {submitting ? "Sending invite…" : "Send invite"}
           </button>
         </div>
       </form>
