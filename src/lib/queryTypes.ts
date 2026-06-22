@@ -1,58 +1,28 @@
-import { VoucherCode, PostStatus, PointsTransaction } from './types';
+import { AmbassadorRanking, InstagramPost, DailyMetric } from './types';
 
-export interface AthleteListItem {
+export interface AmbassadorListItem {
   id: string;
   full_name: string | null;
-  package_name: string | null;
-  points_balance: number;
+  instagram_handle: string | null;
+  fip_player_slug: string | null;
+  lta_player_id: string | null;
 }
 
-export interface AthleteProfileData {
+export interface AmbassadorProfileData {
   full_name: string | null;
   bio: string | null;
-  ranking: string | null;
-  clubs: string | null;
-  training_location: string | null;
-  racket_model: string | null;
   instagram_handle: string | null;
-  points_balance: number;
-  package_name: string | null;
-  package_id: string | null;
+  instagram_user_id: string | null;
+  fip_player_slug: string | null;
+  lta_player_id: string | null;
 }
 
-export interface PendingPost {
-  id: string;
-  title: string;
-  content: string | null;
-  link_url: string | null;
-  created_at: string;
-  athlete_name: string | null;
-  post_type_name: string;
-  points_value: number;
+export interface InstagramAnalyticsData {
+  posts: InstagramPost[];
+  dailyMetrics: DailyMetric[];
 }
 
-export interface VoucherRow extends VoucherCode {
-  used_by_name: string | null;
-}
-
-export interface PostRow {
-  id: string;
-  title: string;
-  content: string | null;
-  link_url: string | null;
-  status: PostStatus;
-  points_awarded: number | null;
-  created_at: string;
-  post_type_name: string;
-}
-
-export interface PointsDashboardData {
-  balance: number;
-  transactions: PointsTransaction[];
-}
-
-export interface AthleteVouchersData {
-  balance: number;
-  available: (VoucherCode & { canAfford: boolean })[];
-  redeemed: VoucherCode[];
+export interface RankingsData {
+  fip: AmbassadorRanking[];
+  lta: AmbassadorRanking[];
 }
