@@ -9,7 +9,8 @@ const corsHeaders = {
 interface InvitePayload {
   email: string;
   full_name: string;
-  package_id?: string;
+  fip_player_slug?: string;
+  lta_player_id?: string;
 }
 
 Deno.serve(async (req: Request) => {
@@ -62,7 +63,7 @@ Deno.serve(async (req: Request) => {
     const sponsorId = staffRow.sponsor_id;
 
     const payload: InvitePayload = await req.json();
-    const { email, full_name, package_id } = payload;
+    const { email, full_name, fip_player_slug, lta_player_id } = payload;
 
     if (!email || !full_name) {
       return new Response(
@@ -81,7 +82,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: inviteData, error: inviteError } =
       await adminClient.auth.admin.inviteUserByEmail(email, {
-        data: { role: "athlete", full_name },
+        data: { role: "ambassador", full_name },
       });
 
     if (inviteError) {
@@ -92,25 +93,26 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const athleteId = inviteData.user.id;
+    const ambassadorId = inviteData.user.id;
 
     const { error: profileError } = await adminClient
-      .from("athlete_profiles")
+      .from("ambassador_profiles")
       .insert({
-        id: athleteId,
+        id: ambassadorId,
         sponsor_id: sponsorId,
-        package_id: package_id ?? null,
+        fip_player_slug: fip_player_slug ?? null,
+        lta_player_id: lta_player_id ?? null,
       });
 
     if (profileError) {
-      console.error("athlete_profiles insert error:", profileError.message);
+      console.error("ambassador_profiles insert error:", profileError.message);
       return new Response(JSON.stringify({ error: profileError.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(JSON.stringify({ user_id: athleteId }), {
+    return new Response(JSON.stringify({ user_id: ambassadorId }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

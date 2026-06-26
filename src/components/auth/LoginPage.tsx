@@ -3,19 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { Logo } from "../shared/Logo";
 
-async function redirectByRole(
-  userId: string,
-  navigate: ReturnType<typeof useNavigate>,
-) {
-  const { data } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .single();
-  const role = (data as { role: string } | null)?.role;
-  navigate(role === "sponsor" ? "/sponsor" : "/athlete", { replace: true });
-}
-
 export function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -29,7 +16,7 @@ export function LoginPage() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        redirectByRole(session.user.id, navigate);
+        navigate("/sponsor", { replace: true });
       } else {
         setCheckingSession(false);
       }
@@ -42,7 +29,7 @@ export function LoginPage() {
     setError(null);
     setSubmitting(true);
 
-    const { data, error: authError } = await supabase.auth.signInWithPassword({
+    const { error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -53,7 +40,7 @@ export function LoginPage() {
       return;
     }
 
-    await redirectByRole(data.user.id, navigate);
+    navigate("/sponsor", { replace: true });
   }
 
   if (checkingSession) {

@@ -4,11 +4,7 @@ import { supabase } from "../../lib/supabase";
 import { Logo } from "../shared/Logo";
 
 const navItems = [
-  { to: "/sponsor/athletes", label: "Athletes" },
-  { to: "/sponsor/posts", label: "Review Posts" },
-  { to: "/sponsor/post-types", label: "Post Types" },
-  { to: "/sponsor/packages", label: "Packages" },
-  { to: "/sponsor/vouchers", label: "Vouchers" },
+  { to: "/sponsor/ambassadors", label: "Ambassadors" },
 ];
 
 function navLinkClass({ isActive }: { isActive: boolean }) {

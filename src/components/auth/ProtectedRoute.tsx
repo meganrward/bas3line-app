@@ -20,12 +20,7 @@ export function ProtectedRoute({ role, children }: Props) {
 
   if (!user) return <Navigate to="/login" replace />;
   if (profile?.role !== role) {
-    return (
-      <Navigate
-        to={profile?.role === "sponsor" ? "/sponsor" : "/athlete"}
-        replace
-      />
-    );
+    return <Navigate to="/login" replace />;
   }
 
   return <>{children}</>;
