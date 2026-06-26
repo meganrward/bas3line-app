@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { loadAmbassadorProfile, loadInstagramAnalytics } from "../../lib/queries";
-import { AmbassadorProfileData, InstagramAnalyticsData } from "../../lib/queryTypes";
-import { InstagramPost } from "../../lib/types";
+import {
+  loadAmbassadorProfile,
+  loadInstagramAnalytics,
+  loadRankings,
+  refreshFipRanking,
+  refreshLtaRanking,
+} from "../../lib/queries";
+import { AmbassadorProfileData, InstagramAnalyticsData, RankingsData } from "../../lib/queryTypes";
+import { InstagramPost, AmbassadorRanking } from "../../lib/types";
 
 type Tab = "instagram" | "rankings" | "sales";
 
@@ -62,9 +68,11 @@ export function AmbassadorDetail() {
         <InstagramTab instagramUserId={profile.instagram_user_id} />
       )}
       {tab === "rankings" && (
-        <div className="card p-8 text-center text-gray-400 text-sm">
-          Rankings coming in the next update.
-        </div>
+        <RankingsTab
+          ambassadorId={id!}
+          fipPlayerSlug={profile.fip_player_slug}
+          ltaPlayerId={profile.lta_player_id}
+        />
       )}
       {tab === "sales" && (
         <div className="card p-8 text-center text-gray-400 text-sm">
@@ -72,6 +80,150 @@ export function AmbassadorDetail() {
         </div>
       )}
     </div>
+  );
+}
+
+function RankingsTab({
+  ambassadorId,
+  fipPlayerSlug,
+  ltaPlayerId,
+}: {
+  ambassadorId: string;
+  fipPlayerSlug: string | null;
+  ltaPlayerId: string | null;
+}) {
+  const [data, setData] = useState<RankingsData>({ fip: [], lta: [] });
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState<"fip" | "lta" | null>(null);
+
+  useEffect(() => {
+    async function fetch() {
+      setData(await loadRankings(ambassadorId));
+      setLoading(false);
+    }
+    fetch();
+  }, [ambassadorId]);
+
+  async function handleRefreshFip() {
+    if (!fipPlayerSlug) return;
+    setRefreshing("fip");
+    const fip = await refreshFipRanking(ambassadorId, fipPlayerSlug);
+    setData((prev) => ({ ...prev, fip }));
+    setRefreshing(null);
+  }
+
+  async function handleRefreshLta() {
+    if (!ltaPlayerId) return;
+    setRefreshing("lta");
+    const lta = await refreshLtaRanking(ambassadorId, ltaPlayerId);
+    setData((prev) => ({ ...prev, lta }));
+    setRefreshing(null);
+  }
+
+  if (loading) return <div className="spinner" />;
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* FIP */}
+      <div className="card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="heading-section">FIP ranking</h2>
+          {fipPlayerSlug && (
+            <button
+              className="btn-secondary text-xs"
+              onClick={handleRefreshFip}
+              disabled={refreshing === "fip"}
+            >
+              {refreshing === "fip" ? "Refreshing…" : "Refresh"}
+            </button>
+          )}
+        </div>
+        {!fipPlayerSlug ? (
+          <p className="text-sm text-gray-400">No FIP player slug set for this ambassador.</p>
+        ) : data.fip.length === 0 ? (
+          <p className="text-sm text-gray-400">
+            No cached data yet. Click Refresh to fetch from FIP.
+          </p>
+        ) : (
+          <>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="table-col-header">Category</th>
+                  <th className="table-col-header text-right">Rank</th>
+                  <th className="table-col-header text-right">Points</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.fip.map((r) => (
+                  <RankingRow key={r.id} ranking={r} />
+                ))}
+              </tbody>
+            </table>
+            <p className="text-xs text-gray-300 mt-3">
+              Updated {new Date(data.fip[0].fetched_at).toLocaleDateString()}
+            </p>
+          </>
+        )}
+      </div>
+
+      {/* LTA */}
+      <div className="card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="heading-section">LTA rankings</h2>
+          {ltaPlayerId && (
+            <button
+              className="btn-secondary text-xs"
+              onClick={handleRefreshLta}
+              disabled={refreshing === "lta"}
+            >
+              {refreshing === "lta" ? "Refreshing…" : "Refresh"}
+            </button>
+          )}
+        </div>
+        {!ltaPlayerId ? (
+          <p className="text-sm text-gray-400">No LTA player ID set for this ambassador.</p>
+        ) : data.lta.length === 0 ? (
+          <p className="text-sm text-gray-400">
+            No cached data yet. Click Refresh to fetch from LTA.
+          </p>
+        ) : (
+          <>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="table-col-header">Category</th>
+                  <th className="table-col-header text-right">Rank</th>
+                  <th className="table-col-header text-right">Points</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.lta.map((r) => (
+                  <RankingRow key={r.id} ranking={r} />
+                ))}
+              </tbody>
+            </table>
+            <p className="text-xs text-gray-300 mt-3">
+              Updated {new Date(data.lta[0].fetched_at).toLocaleDateString()}
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RankingRow({ ranking }: { ranking: AmbassadorRanking }) {
+  return (
+    <tr className="border-b border-gray-50 last:border-0">
+      <td className="px-4 py-2.5 text-gray-700">{ranking.category ?? "Open"}</td>
+      <td className="px-4 py-2.5 text-right font-semibold text-gray-900">
+        {ranking.rank !== null ? `#${ranking.rank}` : "—"}
+      </td>
+      <td className="px-4 py-2.5 text-right text-gray-500">
+        {ranking.points_value !== null ? formatNumber(ranking.points_value) : "—"}
+      </td>
+    </tr>
   );
 }
 

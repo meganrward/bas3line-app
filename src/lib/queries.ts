@@ -71,6 +71,54 @@ export async function loadRankings(ambassadorId: string): Promise<RankingsData> 
   };
 }
 
+export async function refreshFipRanking(
+  ambassadorId: string,
+  fipPlayerSlug: string,
+): Promise<RankingsData["fip"]> {
+  const session = (await supabase.auth.getSession()).data.session;
+  if (!session) return [];
+
+  const res = await fetch(
+    `${process.env.REACT_APP_SUPABASE_URL}/functions/v1/get-fip-ranking`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ slug: fipPlayerSlug, ambassador_id: ambassadorId }),
+    },
+  );
+
+  if (!res.ok) return [];
+  const json = await res.json();
+  return (json.data ?? []) as AmbassadorRanking[];
+}
+
+export async function refreshLtaRanking(
+  ambassadorId: string,
+  ltaPlayerId: string,
+): Promise<RankingsData["lta"]> {
+  const session = (await supabase.auth.getSession()).data.session;
+  if (!session) return [];
+
+  const res = await fetch(
+    `${process.env.REACT_APP_SUPABASE_URL}/functions/v1/get-lta-ranking`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ player_id: ltaPlayerId, ambassador_id: ambassadorId }),
+    },
+  );
+
+  if (!res.ok) return [];
+  const json = await res.json();
+  return (json.data ?? []) as AmbassadorRanking[];
+}
+
 // ─── Instagram analytics queries (from bas3line-ambassador-monitor) ────────────
 
 export async function loadInstagramAnalytics(
