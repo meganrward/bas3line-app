@@ -6,6 +6,7 @@ import {
   loadRankings,
   refreshFipRanking,
   refreshLtaRanking,
+  updateAmbassadorProfile,
 } from "../../lib/queries";
 import { SalesCommissions } from "./SalesCommissions";
 import { AmbassadorProfileData, InstagramAnalyticsData, RankingsData } from "../../lib/queryTypes";
@@ -18,6 +19,7 @@ export function AmbassadorDetail() {
   const [profile, setProfile] = useState<AmbassadorProfileData | null>(null);
   const [tab, setTab] = useState<Tab>("instagram");
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     async function fetch() {
@@ -41,9 +43,27 @@ export function AmbassadorDetail() {
         <span className="text-sm text-gray-600">{profile.full_name ?? "—"}</span>
       </div>
 
-      <h1 className="heading-page mb-1">{profile.full_name ?? "—"}</h1>
-      {profile.instagram_handle && (
-        <p className="text-sm text-gray-400 mb-6">@{profile.instagram_handle}</p>
+      <div className="flex items-start justify-between mb-1">
+        <div>
+          <h1 className="heading-page">{profile.full_name ?? "—"}</h1>
+          {profile.instagram_handle && (
+            <p className="text-sm text-gray-400">@{profile.instagram_handle}</p>
+          )}
+        </div>
+        <button className="btn-secondary text-sm mt-1" onClick={() => setEditing((v) => !v)}>
+          {editing ? "Cancel" : "Edit"}
+        </button>
+      </div>
+
+      {editing && (
+        <EditPanel
+          ambassadorId={id!}
+          profile={profile}
+          onSave={(updated: Partial<AmbassadorProfileData>) => {
+            setProfile((prev) => prev ? { ...prev, ...updated } : prev);
+            setEditing(false);
+          }}
+        />
       )}
 
       {/* Tab bar */}
@@ -76,6 +96,116 @@ export function AmbassadorDetail() {
         />
       )}
       {tab === "sales" && <SalesCommissions />}
+    </div>
+  );
+}
+
+function EditPanel({
+  ambassadorId,
+  profile,
+  onSave,
+}: {
+  ambassadorId: string;
+  profile: AmbassadorProfileData;
+  onSave: (updated: Partial<AmbassadorProfileData>) => void;
+}) {
+  const [bio, setBio] = useState(profile.bio ?? "");
+  const [instagramHandle, setInstagramHandle] = useState(profile.instagram_handle ?? "");
+  const [instagramUserId, setInstagramUserId] = useState(profile.instagram_user_id ?? "");
+  const [fipSlug, setFipSlug] = useState(profile.fip_player_slug ?? "");
+  const [ltaId, setLtaId] = useState(profile.lta_player_id ?? "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSave(e: { preventDefault(): void }) {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+
+    const fields = {
+      bio: bio.trim() || null,
+      instagram_handle: instagramHandle.trim() || null,
+      instagram_user_id: instagramUserId.trim() || null,
+      fip_player_slug: fipSlug.trim() || null,
+      lta_player_id: ltaId.trim() || null,
+    };
+
+    const { error: saveError } = await updateAmbassadorProfile(ambassadorId, fields);
+    if (saveError) {
+      setError(saveError);
+      setSaving(false);
+      return;
+    }
+
+    onSave(fields);
+  }
+
+  return (
+    <div className="card p-5 mb-6">
+      {error && <p className="alert-error mb-4">{error}</p>}
+      <form onSubmit={handleSave} className="flex flex-col gap-4">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="input-label">FIP player slug</label>
+            <input
+              className="input"
+              value={fipSlug}
+              onChange={(e) => setFipSlug(e.target.value)}
+              placeholder="megan-ward"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              From padelfip.com/player/<em>slug</em>/
+            </p>
+          </div>
+          <div>
+            <label className="input-label">LTA player ID</label>
+            <input
+              className="input"
+              value={ltaId}
+              onChange={(e) => setLtaId(e.target.value)}
+              placeholder="bc84334e-5412-4154-99f6-467b897c184d"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              UUID from competitions.lta.org.uk/player-profile/<em>uuid</em>/
+            </p>
+          </div>
+          <div>
+            <label className="input-label">Instagram handle</label>
+            <input
+              className="input"
+              value={instagramHandle}
+              onChange={(e) => setInstagramHandle(e.target.value)}
+              placeholder="meganward"
+            />
+          </div>
+          <div>
+            <label className="input-label">Instagram user ID</label>
+            <input
+              className="input"
+              value={instagramUserId}
+              onChange={(e) => setInstagramUserId(e.target.value)}
+              placeholder="17841400000000000"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Numeric Meta user ID — links to analytics data
+            </p>
+          </div>
+        </div>
+        <div>
+          <label className="input-label">Bio</label>
+          <textarea
+            className="input"
+            rows={3}
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+          />
+        </div>
+        <div className="flex gap-3">
+          <button type="submit" className="btn-primary" disabled={saving}>
+            {saving ? "Saving…" : "Save"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

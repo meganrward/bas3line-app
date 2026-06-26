@@ -149,6 +149,23 @@ export async function loadInstagramAnalytics(
   };
 }
 
+export async function updateAmbassadorProfile(
+  ambassadorId: string,
+  fields: {
+    bio?: string | null;
+    instagram_handle?: string | null;
+    instagram_user_id?: string | null;
+    fip_player_slug?: string | null;
+    lta_player_id?: string | null;
+  },
+): Promise<{ error: string | null }> {
+  const { error } = await (supabase as any)
+    .from("ambassador_profiles")
+    .update(fields)
+    .eq("id", ambassadorId);
+  return { error: error?.message ?? null };
+}
+
 // ─── Ambassador-side queries ───────────────────────────────────────────────────
 
 export async function loadAmbassadorSponsorId(
