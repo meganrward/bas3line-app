@@ -8,13 +8,12 @@ jest.mock('../../hooks/useAuth');
 import { useAuth } from '../../hooks/useAuth';
 const mockUseAuth = useAuth as jest.Mock;
 
-function renderProtectedRoute(requiredRole: 'sponsor' | 'athlete', initialPath = '/protected') {
+function renderProtectedRoute(requiredRole: 'sponsor', initialPath = '/protected') {
   return render(
     <MemoryRouter initialEntries={[initialPath]}>
       <Routes>
         <Route path="/login" element={<div>Login page</div>} />
         <Route path="/sponsor" element={<div>Sponsor dashboard</div>} />
-        <Route path="/athlete" element={<div>Athlete dashboard</div>} />
         <Route
           path="/protected"
           element={
@@ -52,23 +51,13 @@ describe('ProtectedRoute', () => {
     expect(screen.getByText('Protected content')).toBeInTheDocument();
   });
 
-  it('redirects a sponsor to /sponsor when they try to access an athlete route', () => {
+  it('redirects an ambassador to /login when they try to access the sponsor route', () => {
     mockUseAuth.mockReturnValue({
-      user: { id: 'sponsor-123' },
-      profile: { role: 'sponsor' },
-      loading: false,
-    });
-    renderProtectedRoute('athlete');
-    expect(screen.getByText('Sponsor dashboard')).toBeInTheDocument();
-  });
-
-  it('redirects an athlete to /athlete when they try to access a sponsor route', () => {
-    mockUseAuth.mockReturnValue({
-      user: { id: 'athlete-456' },
-      profile: { role: 'athlete' },
+      user: { id: 'ambassador-456' },
+      profile: { role: 'ambassador' },
       loading: false,
     });
     renderProtectedRoute('sponsor');
-    expect(screen.getByText('Athlete dashboard')).toBeInTheDocument();
+    expect(screen.getByText('Login page')).toBeInTheDocument();
   });
 });
