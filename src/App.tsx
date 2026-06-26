@@ -4,6 +4,7 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { SponsorLayout } from './components/layout/SponsorLayout';
 import { AmbassadorsList } from './components/sponsor/AmbassadorsList';
 import { AddAmbassadorForm } from './components/sponsor/AddAmbassadorForm';
+import { AmbassadorDetail } from './components/sponsor/AmbassadorDetail';
 
 export function App() {
   return (
@@ -22,6 +23,7 @@ export function App() {
           <Route index element={<Navigate to="ambassadors" replace />} />
           <Route path="ambassadors" element={<AmbassadorsList />} />
           <Route path="ambassadors/new" element={<AddAmbassadorForm />} />
+          <Route path="ambassadors/:id" element={<AmbassadorDetail />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />
