@@ -7,6 +7,7 @@ import {
   refreshFipRanking,
   refreshLtaRanking,
 } from "../../lib/queries";
+import { SalesCommissions } from "./SalesCommissions";
 import { AmbassadorProfileData, InstagramAnalyticsData, RankingsData } from "../../lib/queryTypes";
 import { InstagramPost, AmbassadorRanking } from "../../lib/types";
 
@@ -74,11 +75,7 @@ export function AmbassadorDetail() {
           ltaPlayerId={profile.lta_player_id}
         />
       )}
-      {tab === "sales" && (
-        <div className="card p-8 text-center text-gray-400 text-sm">
-          Sales &amp; commissions coming in the next update.
-        </div>
-      )}
+      {tab === "sales" && <SalesCommissions />}
     </div>
   );
 }
