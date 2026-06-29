@@ -7,7 +7,8 @@ export function AddAmbassadorForm() {
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [fipSlug, setFipSlug] = useState("");
-  const [ltaId, setLtaId] = useState("");
+  const [ltaMembershipNumber, setLtaMembershipNumber] = useState("");
+  const [ltaPlayerId, setLtaPlayerId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +36,8 @@ export function AddAmbassadorForm() {
           email,
           full_name: fullName,
           fip_player_slug: fipSlug.trim() || undefined,
-          lta_player_id: ltaId.trim() || undefined,
+          lta_membership_number: ltaMembershipNumber.trim() || undefined,
+          lta_player_id: ltaPlayerId.trim() || undefined,
         }),
       },
     );
@@ -95,15 +97,28 @@ export function AddAmbassadorForm() {
           </div>
 
           <div>
-            <label className="input-label">LTA player ID</label>
+            <label className="input-label">LTA membership number</label>
             <input
               className="input"
-              value={ltaId}
-              onChange={(e) => setLtaId(e.target.value)}
+              value={ltaMembershipNumber}
+              onChange={(e) => setLtaMembershipNumber(e.target.value)}
+              placeholder="118985501"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              The number on their LTA membership card
+            </p>
+          </div>
+
+          <div>
+            <label className="input-label">LTA competitions UUID</label>
+            <input
+              className="input"
+              value={ltaPlayerId}
+              onChange={(e) => setLtaPlayerId(e.target.value)}
               placeholder="bc84334e-5412-4154-99f6-467b897c184d"
             />
             <p className="text-xs text-gray-400 mt-1">
-              UUID from competitions.lta.org.uk/player-profile/<em>uuid</em>/
+              From competitions.lta.org.uk/player-profile/<em>uuid</em>/ — needed for rankings
             </p>
           </div>
 

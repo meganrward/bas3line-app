@@ -113,7 +113,8 @@ function EditPanel({
   const [instagramHandle, setInstagramHandle] = useState(profile.instagram_handle ?? "");
   const [instagramUserId, setInstagramUserId] = useState(profile.instagram_user_id ?? "");
   const [fipSlug, setFipSlug] = useState(profile.fip_player_slug ?? "");
-  const [ltaId, setLtaId] = useState(profile.lta_player_id ?? "");
+  const [ltaMembershipNumber, setLtaMembershipNumber] = useState(profile.lta_membership_number ?? "");
+  const [ltaPlayerId, setLtaPlayerId] = useState(profile.lta_player_id ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -127,7 +128,8 @@ function EditPanel({
       instagram_handle: instagramHandle.trim() || null,
       instagram_user_id: instagramUserId.trim() || null,
       fip_player_slug: fipSlug.trim() || null,
-      lta_player_id: ltaId.trim() || null,
+      lta_membership_number: ltaMembershipNumber.trim() || null,
+      lta_player_id: ltaPlayerId.trim() || null,
     };
 
     const { error: saveError } = await updateAmbassadorProfile(ambassadorId, fields);
@@ -158,15 +160,27 @@ function EditPanel({
             </p>
           </div>
           <div>
-            <label className="input-label">LTA player ID</label>
+            <label className="input-label">LTA membership number</label>
             <input
               className="input"
-              value={ltaId}
-              onChange={(e) => setLtaId(e.target.value)}
+              value={ltaMembershipNumber}
+              onChange={(e) => setLtaMembershipNumber(e.target.value)}
+              placeholder="118985501"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              The number on their LTA membership card
+            </p>
+          </div>
+          <div>
+            <label className="input-label">LTA competitions UUID</label>
+            <input
+              className="input"
+              value={ltaPlayerId}
+              onChange={(e) => setLtaPlayerId(e.target.value)}
               placeholder="bc84334e-5412-4154-99f6-467b897c184d"
             />
             <p className="text-xs text-gray-400 mt-1">
-              UUID from competitions.lta.org.uk/player-profile/<em>uuid</em>/
+              From competitions.lta.org.uk/player-profile/<em>uuid</em>/ — needed for the rankings API
             </p>
           </div>
           <div>
@@ -187,7 +201,7 @@ function EditPanel({
               placeholder="17841400000000000"
             />
             <p className="text-xs text-gray-400 mt-1">
-              Numeric Meta user ID — links to analytics data
+              Numeric Meta ID — ask your colleague, it's in the monitor's ambassadors table
             </p>
           </div>
         </div>

@@ -5,6 +5,7 @@ export interface AmbassadorListItem {
   full_name: string | null;
   instagram_handle: string | null;
   fip_player_slug: string | null;
+  lta_membership_number: string | null;
   lta_player_id: string | null;
 }
 
@@ -14,6 +15,7 @@ export interface AmbassadorProfileData {
   instagram_handle: string | null;
   instagram_user_id: string | null;
   fip_player_slug: string | null;
+  lta_membership_number: string | null;
   lta_player_id: string | null;
 }
 

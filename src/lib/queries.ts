@@ -13,7 +13,7 @@ import { InstagramPost, DailyMetric, AmbassadorRanking } from "./types";
 export async function loadAmbassadors(): Promise<AmbassadorListItem[]> {
   const result = await supabase
     .from("ambassador_profiles")
-    .select("id, instagram_handle, fip_player_slug, lta_player_id, profiles(full_name)")
+    .select("id, instagram_handle, fip_player_slug, lta_membership_number, lta_player_id, profiles(full_name)")
     .order("id");
 
   return ((result.data ?? []) as any[]).map((row) => ({
@@ -21,6 +21,7 @@ export async function loadAmbassadors(): Promise<AmbassadorListItem[]> {
     full_name: row.profiles?.full_name ?? null,
     instagram_handle: row.instagram_handle,
     fip_player_slug: row.fip_player_slug,
+    lta_membership_number: row.lta_membership_number,
     lta_player_id: row.lta_player_id,
   }));
 }
@@ -30,7 +31,7 @@ export async function loadAmbassadorProfile(
 ): Promise<AmbassadorProfileData | null> {
   const result = await (supabase as any)
     .from("ambassador_profiles")
-    .select("bio, instagram_handle, instagram_user_id, fip_player_slug, lta_player_id, profiles(full_name)")
+    .select("bio, instagram_handle, instagram_user_id, fip_player_slug, lta_membership_number, lta_player_id, profiles(full_name)")
     .eq("id", ambassadorId)
     .single();
 
@@ -43,6 +44,7 @@ export async function loadAmbassadorProfile(
     instagram_handle: row.instagram_handle,
     instagram_user_id: row.instagram_user_id,
     fip_player_slug: row.fip_player_slug,
+    lta_membership_number: row.lta_membership_number,
     lta_player_id: row.lta_player_id,
   };
 }
@@ -156,6 +158,7 @@ export async function updateAmbassadorProfile(
     instagram_handle?: string | null;
     instagram_user_id?: string | null;
     fip_player_slug?: string | null;
+    lta_membership_number?: string | null;
     lta_player_id?: string | null;
   },
 ): Promise<{ error: string | null }> {
