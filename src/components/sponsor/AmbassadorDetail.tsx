@@ -108,7 +108,7 @@ export function AmbassadorDetail() {
           ltaPlayerId={profile.lta_player_id}
         />
       )}
-      {tab === "sales" && <SalesCommissions />}
+      {tab === "sales" && <SalesCommissions ambassadorId={id!} />}
     </div>
   );
 }
@@ -137,6 +137,10 @@ function EditPanel({
     profile.lta_membership_number ?? "",
   );
   const [ltaPlayerId, setLtaPlayerId] = useState(profile.lta_player_id ?? "");
+  const [discountCode, setDiscountCode] = useState(profile.discount_code ?? "");
+  const [commissionRate, setCommissionRate] = useState(
+    profile.commission_rate != null ? String(profile.commission_rate) : "10",
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -145,6 +149,7 @@ function EditPanel({
     setSaving(true);
     setError(null);
 
+    const parsedRate = parseFloat(commissionRate);
     const fields = {
       gender: (gender || null) as "male" | "female" | null,
       bio: bio.trim() || null,
@@ -153,6 +158,8 @@ function EditPanel({
       fip_player_slug: fipSlug.trim() || null,
       lta_membership_number: ltaMembershipNumber.trim() || null,
       lta_player_id: ltaPlayerId.trim() || null,
+      discount_code: discountCode.trim().toLowerCase() || null,
+      commission_rate: isNaN(parsedRate) ? null : parsedRate,
     };
 
     const { error: saveError } = await updateAmbassadorProfile(
@@ -244,6 +251,34 @@ function EditPanel({
             <p className="text-xs text-gray-400 mt-1">
               Numeric Meta ID — ask your colleague, it's in the monitor's
               ambassadors table
+            </p>
+          </div>
+          <div>
+            <label className="input-label">WooCommerce discount code</label>
+            <input
+              className="input"
+              value={discountCode}
+              onChange={(e) => setDiscountCode(e.target.value)}
+              placeholder="megan10"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              The ambassador's discount code in the WordPress store (stored lowercase)
+            </p>
+          </div>
+          <div>
+            <label className="input-label">Commission rate (%)</label>
+            <input
+              className="input"
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              value={commissionRate}
+              onChange={(e) => setCommissionRate(e.target.value)}
+              placeholder="10"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Percentage of order total paid as commission
             </p>
           </div>
         </div>

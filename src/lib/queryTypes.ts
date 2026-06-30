@@ -19,6 +19,8 @@ export interface AmbassadorProfileData {
   fip_player_slug: string | null;
   lta_membership_number: string | null;
   lta_player_id: string | null;
+  discount_code: string | null;
+  commission_rate: number | null;
 }
 
 export interface InstagramAnalyticsData {

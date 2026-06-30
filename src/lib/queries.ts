@@ -6,7 +6,7 @@ import {
   InstagramAnalyticsData,
   RankingsData,
 } from "./queryTypes";
-import { InstagramPost, DailyMetric, AmbassadorRanking } from "./types";
+import { InstagramPost, DailyMetric, AmbassadorRanking, DiscountCodeSale } from "./types";
 
 // ─── Sponsor queries ───────────────────────────────────────────────────────────
 
@@ -32,7 +32,7 @@ export async function loadAmbassadorProfile(
 ): Promise<AmbassadorProfileData | null> {
   const result = await (supabase as any)
     .from("ambassador_profiles")
-    .select("gender, bio, instagram_handle, instagram_user_id, fip_player_slug, lta_membership_number, lta_player_id, profiles(full_name)")
+    .select("gender, bio, instagram_handle, instagram_user_id, fip_player_slug, lta_membership_number, lta_player_id, discount_code, commission_rate, profiles(full_name)")
     .eq("id", ambassadorId)
     .single();
 
@@ -48,6 +48,8 @@ export async function loadAmbassadorProfile(
     fip_player_slug: row.fip_player_slug,
     lta_membership_number: row.lta_membership_number,
     lta_player_id: row.lta_player_id,
+    discount_code: row.discount_code,
+    commission_rate: row.commission_rate,
   };
 }
 
@@ -181,6 +183,15 @@ export async function deleteRanking(rankingId: string): Promise<{ error: string 
   return { error: error?.message ?? null };
 }
 
+export async function fetchDiscountCodeSales(ambassadorId: string): Promise<DiscountCodeSale[]> {
+  const { data } = await supabase
+    .from("discount_code_sales")
+    .select("*")
+    .eq("ambassador_id", ambassadorId)
+    .order("sale_date", { ascending: false });
+  return (data ?? []) as DiscountCodeSale[];
+}
+
 export async function updateAmbassadorProfile(
   ambassadorId: string,
   fields: {
@@ -191,6 +202,8 @@ export async function updateAmbassadorProfile(
     fip_player_slug?: string | null;
     lta_membership_number?: string | null;
     lta_player_id?: string | null;
+    discount_code?: string | null;
+    commission_rate?: number | null;
   },
 ): Promise<{ error: string | null }> {
   const { error } = await (supabase as any)

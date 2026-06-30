@@ -97,6 +97,12 @@ Deno.serve(async (req: Request) => {
 
     const ambassadorId = inviteData.user.id;
 
+    // Generate default discount code: first initial + surname + 15 (e.g. "mward15")
+    const nameParts = full_name.trim().toLowerCase().split(/\s+/);
+    const firstInitial = nameParts[0]?.[0] ?? "";
+    const surname = nameParts[nameParts.length - 1] ?? "";
+    const defaultDiscountCode = `${firstInitial}${surname}15`;
+
     const { error: profileError } = await adminClient
       .from("ambassador_profiles")
       .insert({
@@ -106,6 +112,7 @@ Deno.serve(async (req: Request) => {
         fip_player_slug: fip_player_slug ?? null,
         lta_membership_number: lta_membership_number ?? null,
         lta_player_id: lta_player_id ?? null,
+        discount_code: defaultDiscountCode,
       });
 
     if (profileError) {

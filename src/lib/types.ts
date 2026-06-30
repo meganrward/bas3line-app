@@ -40,6 +40,19 @@ export interface AmbassadorProfile {
   fip_player_slug: string | null;
   lta_membership_number: string | null;
   lta_player_id: string | null;
+  discount_code: string | null;
+  commission_rate: number | null;
+  created_at: string;
+}
+
+export interface DiscountCodeSale {
+  id: string;
+  ambassador_id: string;
+  discount_code: string;
+  order_id: string;
+  order_total: number;
+  commission_amount: number;
+  sale_date: string;
   created_at: string;
 }
 
@@ -105,6 +118,11 @@ export type Database = {
         Row: AmbassadorProfile;
         Insert: Omit<AmbassadorProfile, 'created_at'>;
         Update: Partial<Omit<AmbassadorProfile, 'id' | 'created_at'>>;
+      };
+      discount_code_sales: {
+        Row: DiscountCodeSale;
+        Insert: Omit<DiscountCodeSale, 'id' | 'created_at'>;
+        Update: Partial<Omit<DiscountCodeSale, 'id' | 'created_at'>>;
       };
       ambassador_rankings: {
         Row: AmbassadorRanking;
