@@ -28,9 +28,12 @@ export interface SponsorStaff {
   created_at: string;
 }
 
+export type Gender = 'male' | 'female';
+
 export interface AmbassadorProfile {
   id: string;
   sponsor_id: string;
+  gender: Gender | null;
   bio: string | null;
   instagram_handle: string | null;
   instagram_user_id: string | null;

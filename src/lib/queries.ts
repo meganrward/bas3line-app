@@ -13,12 +13,13 @@ import { InstagramPost, DailyMetric, AmbassadorRanking } from "./types";
 export async function loadAmbassadors(): Promise<AmbassadorListItem[]> {
   const result = await supabase
     .from("ambassador_profiles")
-    .select("id, instagram_handle, fip_player_slug, lta_membership_number, lta_player_id, profiles(full_name)")
+    .select("id, gender, instagram_handle, fip_player_slug, lta_membership_number, lta_player_id, profiles(full_name)")
     .order("id");
 
   return ((result.data ?? []) as any[]).map((row) => ({
     id: row.id,
     full_name: row.profiles?.full_name ?? null,
+    gender: row.gender,
     instagram_handle: row.instagram_handle,
     fip_player_slug: row.fip_player_slug,
     lta_membership_number: row.lta_membership_number,
@@ -31,7 +32,7 @@ export async function loadAmbassadorProfile(
 ): Promise<AmbassadorProfileData | null> {
   const result = await (supabase as any)
     .from("ambassador_profiles")
-    .select("bio, instagram_handle, instagram_user_id, fip_player_slug, lta_membership_number, lta_player_id, profiles(full_name)")
+    .select("gender, bio, instagram_handle, instagram_user_id, fip_player_slug, lta_membership_number, lta_player_id, profiles(full_name)")
     .eq("id", ambassadorId)
     .single();
 
@@ -40,6 +41,7 @@ export async function loadAmbassadorProfile(
   const row = result.data as any;
   return {
     full_name: row.profiles?.full_name ?? null,
+    gender: row.gender,
     bio: row.bio,
     instagram_handle: row.instagram_handle,
     instagram_user_id: row.instagram_user_id,
@@ -151,9 +153,38 @@ export async function loadInstagramAnalytics(
   };
 }
 
+export async function addManualRanking(
+  ambassadorId: string,
+  source: "lta",
+  category: string,
+  rank: number,
+): Promise<{ data: import("./types").AmbassadorRanking | null; error: string | null }> {
+  const { data, error } = await (supabase as any)
+    .from("ambassador_rankings")
+    .upsert(
+      { ambassador_id: ambassadorId, source, category, rank },
+      { onConflict: "ambassador_id,source,category" },
+    )
+    .select()
+    .single();
+  return {
+    data: data as import("./types").AmbassadorRanking | null,
+    error: error?.message ?? null,
+  };
+}
+
+export async function deleteRanking(rankingId: string): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from("ambassador_rankings")
+    .delete()
+    .eq("id", rankingId);
+  return { error: error?.message ?? null };
+}
+
 export async function updateAmbassadorProfile(
   ambassadorId: string,
   fields: {
+    gender?: 'male' | 'female' | null;
     bio?: string | null;
     instagram_handle?: string | null;
     instagram_user_id?: string | null;

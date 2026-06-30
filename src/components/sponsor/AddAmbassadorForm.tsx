@@ -6,6 +6,7 @@ export function AddAmbassadorForm() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
+  const [gender, setGender] = useState<"male" | "female" | "">("");
   const [fipSlug, setFipSlug] = useState("");
   const [ltaMembershipNumber, setLtaMembershipNumber] = useState("");
   const [ltaPlayerId, setLtaPlayerId] = useState("");
@@ -35,6 +36,7 @@ export function AddAmbassadorForm() {
         body: JSON.stringify({
           email,
           full_name: fullName,
+          gender: gender || undefined,
           fip_player_slug: fipSlug.trim() || undefined,
           lta_membership_number: ltaMembershipNumber.trim() || undefined,
           lta_player_id: ltaPlayerId.trim() || undefined,
@@ -81,6 +83,19 @@ export function AddAmbassadorForm() {
               required
               placeholder="ambassador@example.com"
             />
+          </div>
+
+          <div>
+            <label className="input-label">Gender</label>
+            <select
+              className="input"
+              value={gender}
+              onChange={(e) => setGender(e.target.value as "male" | "female" | "")}
+            >
+              <option value="">Not specified</option>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+            </select>
           </div>
 
           <div>

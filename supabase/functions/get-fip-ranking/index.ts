@@ -1,11 +1,3 @@
-// Edge function: fetch FIP ranking for a player slug and cache in ambassador_rankings.
-//
-// TODO: Find the real FIP JSON endpoint by opening
-//   https://www.padelfip.com/player/<slug>/
-// in Chrome DevTools → Network → XHR/Fetch, then replace ENDPOINT_URL below.
-//
-// Call with: POST { "slug": "megan-ward", "ambassador_id": "<uuid>" }
-
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -16,9 +8,10 @@ const corsHeaders = {
 
 const CACHE_TTL_HOURS = 24;
 
-// Replace this with the real FIP API endpoint once identified via DevTools.
-// Example: "https://www.padelfip.com/wp-json/fip/v1/player-ranking?slug="
-const FIP_ENDPOINT_BASE = "TODO_REPLACE_WITH_REAL_FIP_API_ENDPOINT";
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+const PADEL_API_BASE = "https://padelapi.org/api";
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -41,6 +34,14 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({ error: "slug and ambassador_id are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const padelApiToken = Deno.env.get("PADEL_API_TOKEN");
+    if (!padelApiToken) {
+      return new Response(
+        JSON.stringify({ error: "PADEL_API_TOKEN secret not set" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -69,33 +70,66 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // Fetch from FIP
-    if (FIP_ENDPOINT_BASE === "TODO_REPLACE_WITH_REAL_FIP_API_ENDPOINT") {
-      return new Response(
-        JSON.stringify({
-          error:
-            "FIP endpoint not yet configured. Inspect network traffic on padelfip.com to find the API URL.",
-        }),
-        { status: 501, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
+    const padelHeaders = {
+      "Authorization": `Bearer ${padelApiToken}`,
+      "Accept": "application/json",
+    };
 
-    const fipRes = await fetch(`${FIP_ENDPOINT_BASE}${slug}`);
-    if (!fipRes.ok) {
+    // Step 1: find player ID by name (slug "megan-ward" → query "megan ward")
+    const name = slug.replace(/-/g, " ");
+    const searchRes = await fetch(
+      `${PADEL_API_BASE}/players?name=${encodeURIComponent(name)}`,
+      { headers: padelHeaders },
+    );
+
+    if (!searchRes.ok) {
       return new Response(
-        JSON.stringify({ error: `FIP API responded ${fipRes.status}` }),
+        JSON.stringify({ error: `Padel API player search responded ${searchRes.status}` }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const fipData = await fipRes.json();
+    const searchJson: { data: Array<{ id: number; name: string; category: string }> } =
+      await searchRes.json();
 
-    // TODO: Adapt this mapping once you know the real FIP response shape.
-    const rank: number = fipData.ranking ?? fipData.rank ?? null;
-    const pointsValue: number = fipData.points ?? fipData.points_value ?? null;
-    const category: string = fipData.category ?? "Open";
+    if (!searchJson.data.length) {
+      return new Response(
+        JSON.stringify({ error: `No player found for slug "${slug}"` }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
-    // Delete stale cache rows and insert fresh ones
+    const player = searchJson.data[0];
+
+    // Step 2: fetch official ranking for that player
+    const rankRes = await fetch(
+      `${PADEL_API_BASE}/players/${player.id}/rankings?type=official`,
+      { headers: padelHeaders },
+    );
+
+    if (!rankRes.ok) {
+      return new Response(
+        JSON.stringify({ error: `Padel API rankings responded ${rankRes.status}` }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const rankings: Array<{
+      ranking: number | "hidden_free_plan";
+      points: number | "hidden_free_plan";
+      category: string;
+      type: string;
+    }> = await rankRes.json();
+
+    const latest = rankings[0];
+    if (!latest) {
+      return new Response(
+        JSON.stringify({ error: "No ranking data available for this player" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Delete stale cache and insert fresh row
     await supabase
       .from("ambassador_rankings")
       .delete()
@@ -104,7 +138,13 @@ Deno.serve(async (req: Request) => {
 
     const { data: inserted, error: insertError } = await supabase
       .from("ambassador_rankings")
-      .insert({ ambassador_id, source: "fip", category, rank, points_value: pointsValue })
+      .insert({
+        ambassador_id,
+        source: "fip",
+        category: capitalize(latest.category ?? player.category ?? "Open"),
+        rank: typeof latest.ranking === "number" ? latest.ranking : null,
+        points_value: typeof latest.points === "number" ? latest.points : null,
+      })
       .select()
       .single();
 

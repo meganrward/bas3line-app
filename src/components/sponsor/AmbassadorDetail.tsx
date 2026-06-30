@@ -7,10 +7,16 @@ import {
   refreshFipRanking,
   refreshLtaRanking,
   updateAmbassadorProfile,
+  addManualRanking,
+  deleteRanking,
 } from "../../lib/queries";
 import { SalesCommissions } from "./SalesCommissions";
-import { AmbassadorProfileData, InstagramAnalyticsData, RankingsData } from "../../lib/queryTypes";
-import { InstagramPost, AmbassadorRanking } from "../../lib/types";
+import {
+  AmbassadorProfileData,
+  InstagramAnalyticsData,
+  RankingsData,
+} from "../../lib/queryTypes";
+import { InstagramPost, AmbassadorRanking, Gender } from "../../lib/types";
 
 type Tab = "instagram" | "rankings" | "sales";
 
@@ -36,11 +42,16 @@ export function AmbassadorDetail() {
   return (
     <div>
       <div className="flex items-center gap-2 mb-1">
-        <Link to="/sponsor/ambassadors" className="text-sm text-gray-400 hover:text-gray-600">
+        <Link
+          to="/sponsor/ambassadors"
+          className="text-sm text-gray-400 hover:text-gray-600"
+        >
           Ambassadors
         </Link>
         <span className="text-gray-300">/</span>
-        <span className="text-sm text-gray-600">{profile.full_name ?? "—"}</span>
+        <span className="text-sm text-gray-600">
+          {profile.full_name ?? "—"}
+        </span>
       </div>
 
       <div className="flex items-start justify-between mb-1">
@@ -50,7 +61,10 @@ export function AmbassadorDetail() {
             <p className="text-sm text-gray-400">@{profile.instagram_handle}</p>
           )}
         </div>
-        <button className="btn-secondary text-sm mt-1" onClick={() => setEditing((v) => !v)}>
+        <button
+          className="btn-secondary text-sm mt-1"
+          onClick={() => setEditing((v) => !v)}
+        >
           {editing ? "Cancel" : "Edit"}
         </button>
       </div>
@@ -60,7 +74,7 @@ export function AmbassadorDetail() {
           ambassadorId={id!}
           profile={profile}
           onSave={(updated: Partial<AmbassadorProfileData>) => {
-            setProfile((prev) => prev ? { ...prev, ...updated } : prev);
+            setProfile((prev) => (prev ? { ...prev, ...updated } : prev));
             setEditing(false);
           }}
         />
@@ -91,6 +105,7 @@ export function AmbassadorDetail() {
       {tab === "rankings" && (
         <RankingsTab
           ambassadorId={id!}
+          gender={profile.gender}
           fipPlayerSlug={profile.fip_player_slug}
           ltaPlayerId={profile.lta_player_id}
         />
@@ -109,11 +124,20 @@ function EditPanel({
   profile: AmbassadorProfileData;
   onSave: (updated: Partial<AmbassadorProfileData>) => void;
 }) {
+  const [gender, setGender] = useState<"male" | "female" | "">(
+    profile.gender ?? "",
+  );
   const [bio, setBio] = useState(profile.bio ?? "");
-  const [instagramHandle, setInstagramHandle] = useState(profile.instagram_handle ?? "");
-  const [instagramUserId, setInstagramUserId] = useState(profile.instagram_user_id ?? "");
+  const [instagramHandle, setInstagramHandle] = useState(
+    profile.instagram_handle ?? "",
+  );
+  const [instagramUserId, setInstagramUserId] = useState(
+    profile.instagram_user_id ?? "",
+  );
   const [fipSlug, setFipSlug] = useState(profile.fip_player_slug ?? "");
-  const [ltaMembershipNumber, setLtaMembershipNumber] = useState(profile.lta_membership_number ?? "");
+  const [ltaMembershipNumber, setLtaMembershipNumber] = useState(
+    profile.lta_membership_number ?? "",
+  );
   const [ltaPlayerId, setLtaPlayerId] = useState(profile.lta_player_id ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -124,6 +148,7 @@ function EditPanel({
     setError(null);
 
     const fields = {
+      gender: (gender || null) as "male" | "female" | null,
       bio: bio.trim() || null,
       instagram_handle: instagramHandle.trim() || null,
       instagram_user_id: instagramUserId.trim() || null,
@@ -132,7 +157,10 @@ function EditPanel({
       lta_player_id: ltaPlayerId.trim() || null,
     };
 
-    const { error: saveError } = await updateAmbassadorProfile(ambassadorId, fields);
+    const { error: saveError } = await updateAmbassadorProfile(
+      ambassadorId,
+      fields,
+    );
     if (saveError) {
       setError(saveError);
       setSaving(false);
@@ -147,6 +175,20 @@ function EditPanel({
       {error && <p className="alert-error mb-4">{error}</p>}
       <form onSubmit={handleSave} className="flex flex-col gap-4">
         <div className="grid sm:grid-cols-2 gap-4">
+          <div>
+            <label className="input-label">Gender</label>
+            <select
+              className="input"
+              value={gender}
+              onChange={(e) =>
+                setGender(e.target.value as "male" | "female" | "")
+              }
+            >
+              <option value="">Not specified</option>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+            </select>
+          </div>
           <div>
             <label className="input-label">FIP player slug</label>
             <input
@@ -180,7 +222,8 @@ function EditPanel({
               placeholder="bc84334e-5412-4154-99f6-467b897c184d"
             />
             <p className="text-xs text-gray-400 mt-1">
-              From competitions.lta.org.uk/player-profile/<em>uuid</em>/ — needed for the rankings API
+              From competitions.lta.org.uk/player-profile/<em>uuid</em>/ —
+              needed for the rankings API
             </p>
           </div>
           <div>
@@ -201,7 +244,8 @@ function EditPanel({
               placeholder="17841400000000000"
             />
             <p className="text-xs text-gray-400 mt-1">
-              Numeric Meta ID — ask your colleague, it's in the monitor's ambassadors table
+              Numeric Meta ID — ask your colleague, it's in the monitor's
+              ambassadors table
             </p>
           </div>
         </div>
@@ -224,41 +268,75 @@ function EditPanel({
   );
 }
 
+const LTA_CATEGORY_BASES = [
+  "Open",
+  "U18",
+  "U16",
+  "U14",
+  "U12",
+  "O35",
+  "O40",
+  "O45",
+  "O50",
+  "O55",
+  "O60",
+];
+
+function ltaCategories(gender: Gender | null): string[] {
+  const suffix =
+    gender === "male" ? " Male" : gender === "female" ? " Female" : "";
+  return LTA_CATEGORY_BASES.map((base) => `${base}${suffix}`);
+}
+
 function RankingsTab({
   ambassadorId,
+  gender,
   fipPlayerSlug,
   ltaPlayerId,
 }: {
   ambassadorId: string;
+  gender: Gender | null;
   fipPlayerSlug: string | null;
   ltaPlayerId: string | null;
 }) {
   const [data, setData] = useState<RankingsData>({ fip: [], lta: [] });
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState<"fip" | "lta" | null>(null);
+  const [fipRefreshing, setFipRefreshing] = useState(false);
+  const [ltaRefreshing, setLtaRefreshing] = useState(false);
 
   useEffect(() => {
     async function fetch() {
-      setData(await loadRankings(ambassadorId));
+      const initial = await loadRankings(ambassadorId);
+      setData(initial);
       setLoading(false);
+
+      // Auto-fetch LTA on first load when no data exists yet.
+      // Once data is present, use the Refresh button (which checks LTA's own
+      // "Last updated" timestamp before re-scraping).
+      if (ltaPlayerId && initial.lta.length === 0) {
+        setLtaRefreshing(true);
+        const lta = await refreshLtaRanking(ambassadorId, ltaPlayerId);
+        setData((prev) => ({ ...prev, lta }));
+        setLtaRefreshing(false);
+      }
     }
     fetch();
-  }, [ambassadorId]);
+  }, [ambassadorId, ltaPlayerId]);
 
   async function handleRefreshFip() {
     if (!fipPlayerSlug) return;
-    setRefreshing("fip");
+    setFipRefreshing(true);
     const fip = await refreshFipRanking(ambassadorId, fipPlayerSlug);
     setData((prev) => ({ ...prev, fip }));
-    setRefreshing(null);
+    setFipRefreshing(false);
   }
 
   async function handleRefreshLta() {
     if (!ltaPlayerId) return;
-    setRefreshing("lta");
+    setLtaRefreshing(true);
     const lta = await refreshLtaRanking(ambassadorId, ltaPlayerId);
     setData((prev) => ({ ...prev, lta }));
-    setRefreshing(null);
+    setLtaRefreshing(false);
   }
 
   if (loading) return <div className="spinner" />;
@@ -273,17 +351,19 @@ function RankingsTab({
             <button
               className="btn-secondary text-xs"
               onClick={handleRefreshFip}
-              disabled={refreshing === "fip"}
+              disabled={fipRefreshing}
             >
-              {refreshing === "fip" ? "Refreshing…" : "Refresh"}
+              {fipRefreshing ? "Refreshing…" : "Refresh"}
             </button>
           )}
         </div>
         {!fipPlayerSlug ? (
-          <p className="text-sm text-gray-400">No FIP player slug set for this ambassador.</p>
+          <p className="text-sm text-gray-400">
+            No FIP player slug set — add it via the Edit button above.
+          </p>
         ) : data.fip.length === 0 ? (
           <p className="text-sm text-gray-400">
-            No cached data yet. Click Refresh to fetch from FIP.
+            No data yet. Click Refresh to fetch from FIP.
           </p>
         ) : (
           <>
@@ -296,8 +376,8 @@ function RankingsTab({
                 </tr>
               </thead>
               <tbody>
-                {data.fip.map((r) => (
-                  <RankingRow key={r.id} ranking={r} />
+                {data.fip.map((row) => (
+                  <RankingRow key={row.id} ranking={row} onDelete={null} />
                 ))}
               </tbody>
             </table>
@@ -316,53 +396,170 @@ function RankingsTab({
             <button
               className="btn-secondary text-xs"
               onClick={handleRefreshLta}
-              disabled={refreshing === "lta"}
+              disabled={ltaRefreshing}
             >
-              {refreshing === "lta" ? "Refreshing…" : "Refresh"}
+              {ltaRefreshing ? "Refreshing…" : "Refresh"}
             </button>
           )}
         </div>
-        {!ltaPlayerId ? (
-          <p className="text-sm text-gray-400">No LTA player ID set for this ambassador.</p>
-        ) : data.lta.length === 0 ? (
-          <p className="text-sm text-gray-400">
-            No cached data yet. Click Refresh to fetch from LTA.
-          </p>
-        ) : (
-          <>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="table-col-header">Category</th>
-                  <th className="table-col-header text-right">Rank</th>
-                  <th className="table-col-header text-right">Points</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.lta.map((r) => (
-                  <RankingRow key={r.id} ranking={r} />
-                ))}
-              </tbody>
-            </table>
-            <p className="text-xs text-gray-300 mt-3">
-              Updated {new Date(data.lta[0].fetched_at).toLocaleDateString()}
-            </p>
-          </>
+        {data.lta.length > 0 && (
+          <table className="w-full text-sm mb-5">
+            <thead>
+              <tr className="border-b border-gray-100">
+                <th className="table-col-header">Category</th>
+                <th className="table-col-header text-right">Rank</th>
+                <th className="table-col-header" />
+              </tr>
+            </thead>
+            <tbody>
+              {data.lta.map((r) => (
+                <RankingRow
+                  key={r.id}
+                  ranking={r}
+                  onDelete={async () => {
+                    await deleteRanking(r.id);
+                    setData((prev) => ({
+                      ...prev,
+                      lta: prev.lta.filter((x) => x.id !== r.id),
+                    }));
+                  }}
+                />
+              ))}
+            </tbody>
+          </table>
         )}
+        <AddLtaRankingForm
+          ambassadorId={ambassadorId}
+          gender={gender}
+          onAdded={(r, category) =>
+            setData((prev) => ({
+              ...prev,
+              lta: prev.lta.some((x) => x.category === category)
+                ? prev.lta.map((x) => (x.category === category ? r : x))
+                : [...prev.lta, r],
+            }))
+          }
+        />
       </div>
     </div>
   );
 }
 
-function RankingRow({ ranking }: { ranking: AmbassadorRanking }) {
+function AddLtaRankingForm({
+  ambassadorId,
+  gender,
+  onAdded,
+}: {
+  ambassadorId: string;
+  gender: Gender | null;
+  onAdded: (r: AmbassadorRanking, category: string) => void;
+}) {
+  const categories = ltaCategories(gender);
+  const [category, setCategory] = useState(categories[0]);
+  const [customCategory, setCustomCategory] = useState("");
+  const [rank, setRank] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const isCustom = category === "Other…";
+
+  async function handleAdd(e: { preventDefault(): void }) {
+    e.preventDefault();
+    const cat = isCustom ? customCategory.trim() : category;
+    const rankNum = parseInt(rank, 10);
+    if (!cat || isNaN(rankNum) || rankNum < 1) return;
+
+    setSaving(true);
+    setError(null);
+    const { data, error: addError } = await addManualRanking(
+      ambassadorId,
+      "lta",
+      cat,
+      rankNum,
+    );
+    if (addError || !data) {
+      setError(addError ?? "Failed to save.");
+      setSaving(false);
+      return;
+    }
+    onAdded(data, cat);
+    setRank("");
+    if (isCustom) setCustomCategory("");
+    setSaving(false);
+  }
+
+  return (
+    <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-2">
+      {error && <p className="alert-error w-full text-sm">{error}</p>}
+      <div className="flex-1 min-w-36">
+        <label className="input-label">Category</label>
+        <select
+          className="input"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        >
+          {categories.map((c) => (
+            <option key={c}>{c}</option>
+          ))}
+          <option>Other…</option>
+        </select>
+      </div>
+      {isCustom && (
+        <div className="flex-1 min-w-32">
+          <label className="input-label">Custom</label>
+          <input
+            className="input"
+            value={customCategory}
+            onChange={(e) => setCustomCategory(e.target.value)}
+            placeholder="e.g. O65 Female"
+            required
+          />
+        </div>
+      )}
+      <div className="w-28">
+        <label className="input-label">Rank</label>
+        <input
+          type="number"
+          min="1"
+          className="input"
+          value={rank}
+          onChange={(e) => setRank(e.target.value)}
+          placeholder="15"
+          required
+        />
+      </div>
+      <button type="submit" className="btn-primary" disabled={saving}>
+        {saving ? "Adding…" : "Add ranking"}
+      </button>
+    </form>
+  );
+}
+
+function RankingRow({
+  ranking,
+  onDelete,
+}: {
+  ranking: AmbassadorRanking;
+  onDelete: (() => void) | null;
+}) {
   return (
     <tr className="border-b border-gray-50 last:border-0">
-      <td className="px-4 py-2.5 text-gray-700">{ranking.category ?? "Open"}</td>
+      <td className="px-4 py-2.5 text-gray-700">
+        {ranking.category ? ranking.category.charAt(0).toUpperCase() + ranking.category.slice(1) : "Open"}
+      </td>
       <td className="px-4 py-2.5 text-right font-semibold text-gray-900">
         {ranking.rank !== null ? `#${ranking.rank}` : "—"}
       </td>
       <td className="px-4 py-2.5 text-right text-gray-500">
-        {ranking.points_value !== null ? formatNumber(ranking.points_value) : "—"}
+        {onDelete ? (
+          <button onClick={onDelete} className="btn-danger-text text-xs">
+            Remove
+          </button>
+        ) : ranking.points_value !== null ? (
+          formatNumber(ranking.points_value)
+        ) : (
+          "—"
+        )}
       </td>
     </tr>
   );
@@ -436,11 +633,15 @@ function InstagramTab({ instagramUserId }: { instagramUserId: string | null }) {
             <KpiCard label="Posts (30d)" value={String(last30Posts.length)} />
             <KpiCard
               label="Avg engagement"
-              value={avgEngagement !== null ? `${avgEngagement.toFixed(1)}%` : "—"}
+              value={
+                avgEngagement !== null ? `${avgEngagement.toFixed(1)}%` : "—"
+              }
             />
             <KpiCard
               label="Avg reach / post"
-              value={avgReach !== null ? formatNumber(Math.round(avgReach)) : "—"}
+              value={
+                avgReach !== null ? formatNumber(Math.round(avgReach)) : "—"
+              }
             />
             <KpiCard
               label="Follower growth (30d)"
@@ -510,7 +711,9 @@ function PostRow({ post }: { post: InstagramPost }) {
     <tr className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
       <td className="px-4 py-2.5 text-gray-500">{date}</td>
       <td className="px-4 py-2.5 text-gray-500">
-        {post.media_type ? (mediaLabel[post.media_type] ?? post.media_type) : "—"}
+        {post.media_type
+          ? (mediaLabel[post.media_type] ?? post.media_type)
+          : "—"}
       </td>
       <td className="px-4 py-2.5 text-right text-gray-700">
         {post.likes !== null ? formatNumber(post.likes) : "—"}
@@ -522,7 +725,9 @@ function PostRow({ post }: { post: InstagramPost }) {
         {post.reach !== null ? formatNumber(post.reach) : "—"}
       </td>
       <td className="px-4 py-2.5 text-right text-gray-700">
-        {post.engagement_rate !== null ? `${post.engagement_rate.toFixed(1)}%` : "—"}
+        {post.engagement_rate !== null
+          ? `${post.engagement_rate.toFixed(1)}%`
+          : "—"}
       </td>
     </tr>
   );

@@ -1,8 +1,9 @@
-import { AmbassadorRanking, InstagramPost, DailyMetric } from './types';
+import { AmbassadorRanking, InstagramPost, DailyMetric, Gender } from './types';
 
 export interface AmbassadorListItem {
   id: string;
   full_name: string | null;
+  gender: Gender | null;
   instagram_handle: string | null;
   fip_player_slug: string | null;
   lta_membership_number: string | null;
@@ -11,6 +12,7 @@ export interface AmbassadorListItem {
 
 export interface AmbassadorProfileData {
   full_name: string | null;
+  gender: Gender | null;
   bio: string | null;
   instagram_handle: string | null;
   instagram_user_id: string | null;
