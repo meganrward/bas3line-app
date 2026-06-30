@@ -7,7 +7,6 @@ import {
   refreshFipRanking,
   refreshLtaRanking,
   updateAmbassadorProfile,
-  addManualRanking,
   deleteRanking,
 } from "../../lib/queries";
 import { SalesCommissions } from "./SalesCommissions";
@@ -16,7 +15,7 @@ import {
   InstagramAnalyticsData,
   RankingsData,
 } from "../../lib/queryTypes";
-import { InstagramPost, AmbassadorRanking, Gender } from "../../lib/types";
+import { InstagramPost, AmbassadorRanking } from "../../lib/types";
 
 type Tab = "instagram" | "rankings" | "sales";
 
@@ -105,7 +104,6 @@ export function AmbassadorDetail() {
       {tab === "rankings" && (
         <RankingsTab
           ambassadorId={id!}
-          gender={profile.gender}
           fipPlayerSlug={profile.fip_player_slug}
           ltaPlayerId={profile.lta_player_id}
         />
@@ -268,34 +266,12 @@ function EditPanel({
   );
 }
 
-const LTA_CATEGORY_BASES = [
-  "Open",
-  "U18",
-  "U16",
-  "U14",
-  "U12",
-  "O35",
-  "O40",
-  "O45",
-  "O50",
-  "O55",
-  "O60",
-];
-
-function ltaCategories(gender: Gender | null): string[] {
-  const suffix =
-    gender === "male" ? " Male" : gender === "female" ? " Female" : "";
-  return LTA_CATEGORY_BASES.map((base) => `${base}${suffix}`);
-}
-
 function RankingsTab({
   ambassadorId,
-  gender,
   fipPlayerSlug,
   ltaPlayerId,
 }: {
   ambassadorId: string;
-  gender: Gender | null;
   fipPlayerSlug: string | null;
   ltaPlayerId: string | null;
 }) {
@@ -403,11 +379,12 @@ function RankingsTab({
           )}
         </div>
         {data.lta.length > 0 && (
-          <table className="w-full text-sm mb-5">
+          <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100">
                 <th className="table-col-header">Category</th>
                 <th className="table-col-header text-right">Rank</th>
+                <th className="table-col-header text-right">Points</th>
                 <th className="table-col-header" />
               </tr>
             </thead>
@@ -428,110 +405,8 @@ function RankingsTab({
             </tbody>
           </table>
         )}
-        <AddLtaRankingForm
-          ambassadorId={ambassadorId}
-          gender={gender}
-          onAdded={(r, category) =>
-            setData((prev) => ({
-              ...prev,
-              lta: prev.lta.some((x) => x.category === category)
-                ? prev.lta.map((x) => (x.category === category ? r : x))
-                : [...prev.lta, r],
-            }))
-          }
-        />
       </div>
     </div>
-  );
-}
-
-function AddLtaRankingForm({
-  ambassadorId,
-  gender,
-  onAdded,
-}: {
-  ambassadorId: string;
-  gender: Gender | null;
-  onAdded: (r: AmbassadorRanking, category: string) => void;
-}) {
-  const categories = ltaCategories(gender);
-  const [category, setCategory] = useState(categories[0]);
-  const [customCategory, setCustomCategory] = useState("");
-  const [rank, setRank] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const isCustom = category === "Other…";
-
-  async function handleAdd(e: { preventDefault(): void }) {
-    e.preventDefault();
-    const cat = isCustom ? customCategory.trim() : category;
-    const rankNum = parseInt(rank, 10);
-    if (!cat || isNaN(rankNum) || rankNum < 1) return;
-
-    setSaving(true);
-    setError(null);
-    const { data, error: addError } = await addManualRanking(
-      ambassadorId,
-      "lta",
-      cat,
-      rankNum,
-    );
-    if (addError || !data) {
-      setError(addError ?? "Failed to save.");
-      setSaving(false);
-      return;
-    }
-    onAdded(data, cat);
-    setRank("");
-    if (isCustom) setCustomCategory("");
-    setSaving(false);
-  }
-
-  return (
-    <form onSubmit={handleAdd} className="flex flex-wrap items-end gap-2">
-      {error && <p className="alert-error w-full text-sm">{error}</p>}
-      <div className="flex-1 min-w-36">
-        <label className="input-label">Category</label>
-        <select
-          className="input"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-        >
-          {categories.map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-          <option>Other…</option>
-        </select>
-      </div>
-      {isCustom && (
-        <div className="flex-1 min-w-32">
-          <label className="input-label">Custom</label>
-          <input
-            className="input"
-            value={customCategory}
-            onChange={(e) => setCustomCategory(e.target.value)}
-            placeholder="e.g. O65 Female"
-            required
-          />
-        </div>
-      )}
-      <div className="w-28">
-        <label className="input-label">Rank</label>
-        <input
-          type="number"
-          min="1"
-          className="input"
-          value={rank}
-          onChange={(e) => setRank(e.target.value)}
-          placeholder="15"
-          required
-        />
-      </div>
-      <button type="submit" className="btn-primary" disabled={saving}>
-        {saving ? "Adding…" : "Add ranking"}
-      </button>
-    </form>
   );
 }
 
@@ -551,16 +426,15 @@ function RankingRow({
         {ranking.rank !== null ? `#${ranking.rank}` : "—"}
       </td>
       <td className="px-4 py-2.5 text-right text-gray-500">
-        {onDelete ? (
+        {ranking.points_value !== null ? formatNumber(ranking.points_value) : "—"}
+      </td>
+      {onDelete && (
+        <td className="px-4 py-2.5 text-right">
           <button onClick={onDelete} className="btn-danger-text text-xs">
             Remove
           </button>
-        ) : ranking.points_value !== null ? (
-          formatNumber(ranking.points_value)
-        ) : (
-          "—"
-        )}
-      </td>
+        </td>
+      )}
     </tr>
   );
 }
@@ -734,6 +608,5 @@ function PostRow({ post }: { post: InstagramPost }) {
 }
 
 function formatNumber(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
   return String(n);
 }

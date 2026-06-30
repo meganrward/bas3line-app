@@ -81,18 +81,40 @@ async function fetchLtaLastUpdated(cookies: string): Promise<Date | null> {
   return isNaN(parsed.getTime()) ? null : parsed;
 }
 
+function stripTags(s: string): string {
+  return s.replace(/<[^>]+>/g, "").trim();
+}
+
 function parseRankings(html: string): Array<{ category: string; rank: number | null; points: number | null }> {
-  const rowPattern = /<th scope="row"[^>]*>[\s\S]*?<a[^>]*player\.aspx[^"]*">([^<]+)<\/a>[\s\S]*?<td[^>]*text--right[^>]*>[\s\S]*?(?:<a[^>]*>)?(\d+)(?:<\/a>)?[\s\S]*?(?:<td[^>]*-m-visible[^>]*>[\s\S]*?(?:<a[^>]*>)?(\d+)(?:<\/a>)?[\s\S]*?<\/td>)?/g;
+  // Match from the player.aspx category link through to the next row or end of table.
+  // We do NOT rely on </th> because the LTA page uses implicit tag closing.
+  const rowPattern = /<th scope="row"[^>]*>[\s\S]*?<a[^>]*player\.aspx[^"]*">([^<]+)<\/a>([\s\S]*?)(?=<th scope="row"|<\/tbody>|<\/table>)/g;
 
   const results: Array<{ category: string; rank: number | null; points: number | null }> = [];
-  let match: RegExpExecArray | null;
-  while ((match = rowPattern.exec(html)) !== null) {
+  let rowMatch: RegExpExecArray | null;
+
+  while ((rowMatch = rowPattern.exec(html)) !== null) {
+    const category = rowMatch[1].trim();
+    const rowContent = rowMatch[2];
+
+    // Extract text from each <td> in order: [0]=rank, [1]=singles points, [2]=doubles points
+    const tdValues: string[] = [];
+    const tdPattern = /<td[^>]*>([\s\S]*?)<\/td>/g;
+    let tdMatch: RegExpExecArray | null;
+    while ((tdMatch = tdPattern.exec(rowContent)) !== null) {
+      tdValues.push(stripTags(tdMatch[1]));
+    }
+
+    const rank = tdValues[0] ? parseInt(tdValues[0], 10) : null;
+    const points = tdValues[2] ? parseInt(tdValues[2], 10) : null;
+
     results.push({
-      category: match[1].trim(),
-      rank: match[2] ? parseInt(match[2], 10) : null,
-      points: match[3] ? parseInt(match[3], 10) : null,
+      category,
+      rank: rank !== null && !isNaN(rank) ? rank : null,
+      points: points !== null && !isNaN(points) ? points : null,
     });
   }
+
   return results;
 }
 
