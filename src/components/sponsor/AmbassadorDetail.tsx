@@ -3,24 +3,22 @@ import { useParams, Link } from 'react-router-dom';
 import {
   loadAmbassadorProfile,
   loadInstagramAnalytics,
-  loadRankings,
-  refreshFipRanking,
-  refreshLtaRanking,
   updateAmbassadorProfile,
-  deleteRanking,
 } from '../../lib/queries';
 import { SalesCommissions } from './SalesCommissions';
 import { usePadelClubs } from '../../hooks/usePadelClubs';
+import { useRankings } from '../../hooks/useRankings';
+import { RankingsTable } from '../shared/RankingsTable';
+import { formatLastUpdated, latestFetchedAt } from '../../lib/profile.utils';
 import { ClubPicker } from '../shared/ClubPicker';
 import { buildProfileSubtitle, normalizeOptionalText } from '../../lib/clubs.utils';
-import { AmbassadorProfileData, InstagramAnalyticsData, RankingsData } from '../../lib/queryTypes';
+import { AmbassadorProfileData, InstagramAnalyticsData } from '../../lib/queryTypes';
 import { InstagramPost, AmbassadorRanking } from '../../lib/types';
 import {
   buildInstagramKpis,
   formatFollowerGrowth,
   formatNullable,
   formatNumber,
-  formatRankingCategory,
 } from './AmbassadorDetail.utils';
 
 type Tab = 'instagram' | 'rankings' | 'sales';
@@ -339,53 +337,8 @@ function RankingsTab({
   fipPlayerSlug: string | null;
   ltaPlayerId: string | null;
 }>) {
-  const [data, setData] = useState<RankingsData>({ fip: [], lta: [] });
-  const [loading, setLoading] = useState(true);
-  const [fipRefreshing, setFipRefreshing] = useState(false);
-  const [ltaRefreshing, setLtaRefreshing] = useState(false);
-
-  useEffect(() => {
-    async function fetch() {
-      const initial = await loadRankings(ambassadorId);
-      setData(initial);
-      setLoading(false);
-
-      // Auto-fetch LTA on first load when no data exists yet.
-      // Once data is present, use the Refresh button (which checks LTA's own
-      // "Last updated" timestamp before re-scraping).
-      if (ltaPlayerId && initial.lta.length === 0) {
-        setLtaRefreshing(true);
-        const lta = await refreshLtaRanking(ambassadorId, ltaPlayerId);
-        setData((prev) => ({ ...prev, lta }));
-        setLtaRefreshing(false);
-      }
-    }
-    fetch();
-  }, [ambassadorId, ltaPlayerId]);
-
-  async function handleRefreshFip() {
-    if (!fipPlayerSlug) return;
-    setFipRefreshing(true);
-    const fip = await refreshFipRanking(ambassadorId, fipPlayerSlug);
-    setData((prev) => ({ ...prev, fip }));
-    setFipRefreshing(false);
-  }
-
-  async function handleRefreshLta() {
-    if (!ltaPlayerId) return;
-    setLtaRefreshing(true);
-    const lta = await refreshLtaRanking(ambassadorId, ltaPlayerId);
-    setData((prev) => ({ ...prev, lta }));
-    setLtaRefreshing(false);
-  }
-
-  async function handleDeleteLta(rankingId: string) {
-    await deleteRanking(rankingId);
-    setData((prev) => ({
-      ...prev,
-      lta: prev.lta.filter((ranking) => ranking.id !== rankingId),
-    }));
-  }
+  const { data, loading, fipRefreshing, ltaRefreshing, refreshFip, refreshLta, removeLta } =
+    useRankings(ambassadorId, fipPlayerSlug, ltaPlayerId);
 
   if (loading) return <div className="spinner" />;
 
@@ -396,11 +349,7 @@ function RankingsTab({
         <div className="flex items-center justify-between mb-4">
           <h2 className="heading-section">FIP ranking</h2>
           {fipPlayerSlug && (
-            <button
-              className="btn-secondary text-xs"
-              onClick={handleRefreshFip}
-              disabled={fipRefreshing}
-            >
+            <button className="btn-secondary text-xs" onClick={refreshFip} disabled={fipRefreshing}>
               {fipRefreshing ? 'Refreshing…' : 'Refresh'}
             </button>
           )}
@@ -413,32 +362,12 @@ function RankingsTab({
         <div className="flex items-center justify-between mb-4">
           <h2 className="heading-section">LTA rankings</h2>
           {ltaPlayerId && (
-            <button
-              className="btn-secondary text-xs"
-              onClick={handleRefreshLta}
-              disabled={ltaRefreshing}
-            >
+            <button className="btn-secondary text-xs" onClick={refreshLta} disabled={ltaRefreshing}>
               {ltaRefreshing ? 'Refreshing…' : 'Refresh'}
             </button>
           )}
         </div>
-        {data.lta.length > 0 && (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="table-col-header">Category</th>
-                <th className="table-col-header text-right">Rank</th>
-                <th className="table-col-header text-right">Points</th>
-                <th className="table-col-header" />
-              </tr>
-            </thead>
-            <tbody>
-              {data.lta.map((r) => (
-                <RankingRow key={r.id} ranking={r} onDelete={() => handleDeleteLta(r.id)} />
-              ))}
-            </tbody>
-          </table>
-        )}
+        {data.lta.length > 0 && <RankingsTable rankings={data.lta} onRemove={removeLta} />}
       </div>
     </div>
   );
@@ -465,51 +394,9 @@ function FipRankings({
 
   return (
     <>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-gray-100">
-            <th className="table-col-header">Category</th>
-            <th className="table-col-header text-right">Rank</th>
-            <th className="table-col-header text-right">Points</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rankings.map((row) => (
-            <RankingRow key={row.id} ranking={row} onDelete={null} />
-          ))}
-        </tbody>
-      </table>
-      <p className="text-xs text-gray-300 mt-3">
-        Updated {new Date(rankings[0].fetched_at).toLocaleDateString()}
-      </p>
+      <RankingsTable rankings={rankings} />
+      <p className="text-xs text-gray-300 mt-3">{formatLastUpdated(latestFetchedAt(rankings))}</p>
     </>
-  );
-}
-
-function RankingRow({
-  ranking,
-  onDelete,
-}: Readonly<{
-  ranking: AmbassadorRanking;
-  onDelete: (() => void) | null;
-}>) {
-  return (
-    <tr className="border-b border-gray-50 last:border-0">
-      <td className="px-4 py-2.5 text-gray-700">{formatRankingCategory(ranking.category)}</td>
-      <td className="px-4 py-2.5 text-right font-semibold text-gray-900">
-        {formatNullable(ranking.rank, (rank) => `#${rank}`)}
-      </td>
-      <td className="px-4 py-2.5 text-right text-gray-500">
-        {formatNullable(ranking.points_value, formatNumber)}
-      </td>
-      {onDelete && (
-        <td className="px-4 py-2.5 text-right">
-          <button onClick={onDelete} className="btn-danger-text text-xs">
-            Remove
-          </button>
-        </td>
-      )}
-    </tr>
   );
 }
 

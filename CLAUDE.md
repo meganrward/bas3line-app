@@ -14,9 +14,10 @@ Single-sponsor. One sponsor organisation, multiple ambassadors.
 
 ### Current state vs roadmap
 
-- **Built (sponsor-only):** ambassador list/add/edit, FIP + LTA rankings, Instagram analytics tab, sales and commission tab, WooCommerce sales webhook.
-- **Not built:** any ambassador-facing UI (every login currently goes to `/sponsor`), team role and location fields, commission ledger and payout requests, marketplace.
-- **Roadmap phases:** 0 housekeeping/security, 1 ambassador shell (`/ambassador/*`), 2 profile, 3 progress, 4 sales, 5 cash or kit, 6 marketplace.
+- **Built (sponsor):** ambassador list/add/edit (incl. team role, city/region, home club), FIP + LTA rankings, Instagram analytics tab, sales and commission tab, WooCommerce sales webhook.
+- **Built (ambassador):** role-based login routing, `/ambassador/*` shell, **Your Profile** (details, edit bio / city / home club, rankings with refresh, Instagram connect link).
+- **Not built:** Your Progress, Your Sales, Cash or Kit (commission ledger and payout requests), Marketplace. Those routes are "coming soon" placeholders. Instagram *connection status* needs Phase 3's `get-my-engagement`.
+- **Roadmap phases:** 0 housekeeping/security (done), 1 ambassador shell (done), 2 profile (done, except the nightly ranking refresh), 3 progress, 4 sales, 5 cash or kit, 6 marketplace.
 - The old points/posts/vouchers design was dropped in `20260622000000_pivot_to_ambassadors.sql`. Don't resurrect it.
 
 ### Decisions already made
@@ -75,11 +76,13 @@ src/
   components/
     auth/           LoginPage, ProtectedRoute (+ tests)
     layout/         SponsorLayout
-    shared/         Logo, ClubPicker (club dropdown with inline "add a club")
+    shared/         Logo, ClubPicker (club dropdown with inline "add a club"),
+                    RankingsTable (read-only, or with Remove for sponsors)
+    ambassador/     MyProfile (+ MyProfileEditForm, MyRankings), ComingSoon placeholder
     sponsor/        AmbassadorsList, AddAmbassadorForm,
                     AmbassadorDetail (tabs: Instagram, Rankings, Sales; edit panel),
                     SalesCommissions
-  hooks/            useAuth.ts, usePadelClubs.ts
+  hooks/            useAuth.ts, usePadelClubs.ts, useRankings.ts (load + refresh FIP/LTA)
   lib/
     supabase.ts         Main Supabase client (REACT_APP_SUPABASE_URL / ANON_KEY)
     supabaseMonitor.ts  Client for the separate monitor project (Instagram data)
@@ -88,6 +91,8 @@ src/
     queries.ts          All Supabase query functions (centralised)
     clubs.utils.ts      Pure club helpers (labels, sorting, duplicate check, profile subtitle)
     routes.utils.ts     homePathForRole
+    profile.utils.ts    Profile detail rows, last-updated formatting, ambassador edit validation
+    links.ts            External URLs (Instagram connect page)
 supabase/
   functions/
     _shared/                  authorize-ambassador-access.ts (auth helper)

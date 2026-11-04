@@ -8,6 +8,7 @@ import { AmbassadorsList } from './components/sponsor/AmbassadorsList';
 import { AddAmbassadorForm } from './components/sponsor/AddAmbassadorForm';
 import { AmbassadorDetail } from './components/sponsor/AmbassadorDetail';
 import { ComingSoon } from './components/ambassador/ComingSoon';
+import { MyProfile } from './components/ambassador/MyProfile';
 
 export function App() {
   // The site is served from a subpath on GitHub Pages (see "homepage" in package.json).
@@ -40,7 +41,7 @@ export function App() {
           }
         >
           <Route index element={<Navigate to="profile" replace />} />
-          <Route path="profile" element={<ComingSoon title="Your Profile" />} />
+          <Route path="profile" element={<MyProfile />} />
           <Route path="progress" element={<ComingSoon title="Your Progress" />} />
           <Route path="sales" element={<ComingSoon title="Your Sales" />} />
           <Route path="marketplace" element={<ComingSoon title="Marketplace" />} />
