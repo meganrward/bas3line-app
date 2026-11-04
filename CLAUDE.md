@@ -143,6 +143,11 @@ discount_code_sales   ambassador_id, discount_code, order_id (unique), order_tot
 
 Ambassadors can update their own `ambassador_profiles` row, but the `guard_ambassador_profile_update` trigger only lets them change the columns in its `editable_columns` allow-list (currently `bio`, `training_location`). Everything else (`commission_rate`, `discount_code`, IDs, `sponsor_id`) is sponsor-only. Sponsors, staff and service-role code are unrestricted. To let ambassadors edit another column, redefine that function in a new migration and add a pgTAP test. Tests live in `supabase/tests/database/` and run with `supabase test db`.
 
+### Table access rules
+
+- The signed-out `anon` role has **no** privileges on public tables (`20260709000000_revoke_anon_table_access.sql`), and new tables don't inherit any. Don't grant to `anon`. A pgTAP test enforces this.
+- Every new table needs RLS enabled, explicit policies, and `grant ... to authenticated` (and `service_role` if an edge function writes to it). Add a pgTAP test for who can read and write.
+
 ### RLS / auth helpers
 
 - `current_user_role()` — returns `profiles.role` for the current user

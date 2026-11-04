@@ -63,14 +63,15 @@ select is(
 );
 
 -- ── Signed out ───────────────────────────────────────────────────────────────
--- anon still has Supabase's default table grant, so RLS is what hides the rows.
+-- anon has no table privileges at all (see anon_has_no_table_access.test.sql).
 select set_config('request.jwt.claims', '{"role":"anon"}', true);
 set local role anon;
 
-select is(
-  (select count(*)::int from public.ambassador_rankings),
-  0,
-  'signed-out visitors see no rankings'
+select throws_ok(
+  $$select * from public.ambassador_rankings$$,
+  '42501',
+  null,
+  'signed-out visitors cannot read rankings'
 );
 
 select * from finish();
