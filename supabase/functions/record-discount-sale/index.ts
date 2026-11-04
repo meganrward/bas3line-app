@@ -90,14 +90,21 @@ Deno.serve(async (req: Request) => {
     ((order_total * commissionRate) / 100).toFixed(2),
   );
 
-  const { error: insertError } = await supabase.from("discount_code_sales").insert({
-    ambassador_id: ambassador.id,
-    discount_code: discount_code.toLowerCase(),
-    order_id: String(order_id),
-    order_total: Number(order_total),
-    commission_amount: commissionAmount,
-    sale_date,
-  });
+  // order_id is unique, so a retried webhook is ignored rather than duplicated
+  const { data: insertedRows, error: insertError } = await supabase
+    .from("discount_code_sales")
+    .upsert(
+      {
+        ambassador_id: ambassador.id,
+        discount_code: discount_code.toLowerCase(),
+        order_id: String(order_id),
+        order_total: Number(order_total),
+        commission_amount: commissionAmount,
+        sale_date,
+      },
+      { onConflict: "order_id", ignoreDuplicates: true },
+    )
+    .select("id");
 
   if (insertError) {
     console.error("Insert error:", insertError);
@@ -107,8 +114,10 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  const duplicate = !insertedRows || insertedRows.length === 0;
+
   return new Response(
-    JSON.stringify({ success: true, commission_amount: commissionAmount }),
+    JSON.stringify({ success: true, duplicate, commission_amount: commissionAmount }),
     { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
 });
