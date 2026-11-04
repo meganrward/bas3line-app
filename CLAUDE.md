@@ -75,17 +75,19 @@ src/
   components/
     auth/           LoginPage, ProtectedRoute (+ tests)
     layout/         SponsorLayout
-    shared/         Logo
+    shared/         Logo, ClubPicker (club dropdown with inline "add a club")
     sponsor/        AmbassadorsList, AddAmbassadorForm,
                     AmbassadorDetail (tabs: Instagram, Rankings, Sales; edit panel),
                     SalesCommissions
-  hooks/            useAuth.ts
+  hooks/            useAuth.ts, usePadelClubs.ts
   lib/
     supabase.ts         Main Supabase client (REACT_APP_SUPABASE_URL / ANON_KEY)
     supabaseMonitor.ts  Client for the separate monitor project (Instagram data)
     types.ts            Shared TS interfaces matching DB schema
     queryTypes.ts       Return-type interfaces for query functions
     queries.ts          All Supabase query functions (centralised)
+    clubs.utils.ts      Pure club helpers (labels, sorting, duplicate check, profile subtitle)
+    routes.utils.ts     homePathForRole
 supabase/
   functions/
     _shared/                  authorize-ambassador-access.ts (auth helper)
@@ -117,7 +119,11 @@ sponsors              id, name, logo_url, website_url
 sponsor_staff         id, sponsor_id, user_id, staff_role ('manager'|'athlete_manager'|'ambassador_agent')
 ambassador_profiles   id (= profiles.id), sponsor_id, instagram_handle, instagram_user_id, bio, gender,
                       fip_player_slug, lta_player_id (competitions UUID), lta_membership_number,
-                      discount_code (unique, stored lowercase), commission_rate (default 10.00)
+                      discount_code (unique, stored lowercase), commission_rate (default 10.00),
+                      team_role (sponsor-assigned label), training_location (city / region),
+                      home_club_id → padel_clubs
+padel_clubs           id, name, town, county, region, created_by. Our own list (no external API).
+                      Signed-in users read and add; only sponsors edit/delete. Unique on name+town.
 ambassador_rankings   ambassador_id, source ('fip'|'lta'), category, rank, points_value, fetched_at
                       unique per (ambassador, source, category); sponsor-only write via service role
 discount_code_sales   ambassador_id, discount_code, order_id (unique), order_total,

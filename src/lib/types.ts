@@ -42,8 +42,23 @@ export interface AmbassadorProfile {
   lta_player_id: string | null;
   discount_code: string | null;
   commission_rate: number | null;
+  team_role: string | null;
+  training_location: string | null; // city / region
+  home_club_id: string | null;
   created_at: string;
 }
+
+export interface PadelClub {
+  id: string;
+  name: string;
+  town: string | null;
+  county: string | null;
+  region: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export type ClubSummary = Pick<PadelClub, 'id' | 'name' | 'town'>;
 
 export interface DiscountCodeSale {
   id: string;
@@ -118,6 +133,11 @@ export type Database = {
         Row: AmbassadorProfile;
         Insert: Omit<AmbassadorProfile, 'created_at'>;
         Update: Partial<Omit<AmbassadorProfile, 'id' | 'created_at'>>;
+      };
+      padel_clubs: {
+        Row: PadelClub;
+        Insert: Pick<PadelClub, 'name'> & Partial<Omit<PadelClub, 'id' | 'created_at' | 'name'>>;
+        Update: Partial<Omit<PadelClub, 'id' | 'created_at'>>;
       };
       discount_code_sales: {
         Row: DiscountCodeSale;

@@ -13,6 +13,8 @@ interface InvitePayload {
   fip_player_slug?: string;
   lta_membership_number?: string;
   lta_player_id?: string;
+  team_role?: string;
+  training_location?: string;
 }
 
 Deno.serve(async (req: Request) => {
@@ -65,7 +67,16 @@ Deno.serve(async (req: Request) => {
     const sponsorId = staffRow.sponsor_id;
 
     const payload: InvitePayload = await req.json();
-    const { email, full_name, gender, fip_player_slug, lta_membership_number, lta_player_id } = payload;
+    const {
+      email,
+      full_name,
+      gender,
+      fip_player_slug,
+      lta_membership_number,
+      lta_player_id,
+      team_role,
+      training_location,
+    } = payload;
 
     if (!email || !full_name) {
       return new Response(
@@ -112,6 +123,8 @@ Deno.serve(async (req: Request) => {
         fip_player_slug: fip_player_slug ?? null,
         lta_membership_number: lta_membership_number ?? null,
         lta_player_id: lta_player_id ?? null,
+        team_role: team_role ?? null,
+        training_location: training_location ?? null,
         discount_code: defaultDiscountCode,
       });
 

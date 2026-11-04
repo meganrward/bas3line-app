@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { normalizeOptionalText } from '../../lib/clubs.utils';
 
 export function AddAmbassadorForm() {
   const navigate = useNavigate();
@@ -10,6 +11,8 @@ export function AddAmbassadorForm() {
   const [fipSlug, setFipSlug] = useState('');
   const [ltaMembershipNumber, setLtaMembershipNumber] = useState('');
   const [ltaPlayerId, setLtaPlayerId] = useState('');
+  const [teamRole, setTeamRole] = useState('');
+  const [trainingLocation, setTrainingLocation] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +41,8 @@ export function AddAmbassadorForm() {
         fip_player_slug: fipSlug.trim() || undefined,
         lta_membership_number: ltaMembershipNumber.trim() || undefined,
         lta_player_id: ltaPlayerId.trim() || undefined,
+        team_role: normalizeOptionalText(teamRole) ?? undefined,
+        training_location: normalizeOptionalText(trainingLocation) ?? undefined,
       }),
     });
 
@@ -93,6 +98,36 @@ export function AddAmbassadorForm() {
               <option value="female">Female</option>
               <option value="male">Male</option>
             </select>
+          </div>
+
+          <div>
+            <label htmlFor="team-role" className="input-label">
+              Team role
+            </label>
+            <input
+              id="team-role"
+              className="input"
+              value={teamRole}
+              onChange={(e) => setTeamRole(e.target.value)}
+              placeholder="Ambassador"
+            />
+            <p className="text-hint mt-1">Shown on the ambassador's profile</p>
+          </div>
+
+          <div>
+            <label htmlFor="training-location" className="input-label">
+              City / region
+            </label>
+            <input
+              id="training-location"
+              className="input"
+              value={trainingLocation}
+              onChange={(e) => setTrainingLocation(e.target.value)}
+              placeholder="Leeds, Yorkshire"
+            />
+            <p className="text-hint mt-1">
+              The ambassador picks their own home club after they sign in
+            </p>
           </div>
 
           <div>

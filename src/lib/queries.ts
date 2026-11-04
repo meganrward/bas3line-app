@@ -6,7 +6,14 @@ import {
   InstagramAnalyticsData,
   RankingsData,
 } from './queryTypes';
-import { InstagramPost, DailyMetric, AmbassadorRanking, DiscountCodeSale } from './types';
+import {
+  InstagramPost,
+  DailyMetric,
+  AmbassadorRanking,
+  DiscountCodeSale,
+  PadelClub,
+} from './types';
+import { NewClubInput, normalizeOptionalText } from './clubs.utils';
 
 // ─── Sponsor queries ───────────────────────────────────────────────────────────
 
@@ -35,7 +42,7 @@ export async function loadAmbassadorProfile(
   const result = await (supabase as any)
     .from('ambassador_profiles')
     .select(
-      'gender, bio, instagram_handle, instagram_user_id, fip_player_slug, lta_membership_number, lta_player_id, discount_code, commission_rate, profiles(full_name)',
+      'gender, bio, instagram_handle, instagram_user_id, fip_player_slug, lta_membership_number, lta_player_id, discount_code, commission_rate, team_role, training_location, home_club_id, home_club:padel_clubs(id, name, town), profiles(full_name)',
     )
     .eq('id', ambassadorId)
     .single();
@@ -54,6 +61,10 @@ export async function loadAmbassadorProfile(
     lta_player_id: row.lta_player_id,
     discount_code: row.discount_code,
     commission_rate: row.commission_rate,
+    team_role: row.team_role,
+    training_location: row.training_location,
+    home_club_id: row.home_club_id,
+    home_club: row.home_club ?? null,
   };
 }
 
@@ -179,6 +190,9 @@ export async function updateAmbassadorProfile(
     lta_player_id?: string | null;
     discount_code?: string | null;
     commission_rate?: number | null;
+    team_role?: string | null;
+    training_location?: string | null;
+    home_club_id?: string | null;
   },
 ): Promise<{ error: string | null }> {
   const { error } = await (supabase as any)
@@ -186,6 +200,34 @@ export async function updateAmbassadorProfile(
     .update(fields)
     .eq('id', ambassadorId);
   return { error: error?.message ?? null };
+}
+
+// ─── Padel club queries ────────────────────────────────────────────────────────
+
+export async function loadPadelClubs(): Promise<PadelClub[]> {
+  const { data } = await supabase.from('padel_clubs').select('*').order('name');
+  return (data ?? []) as PadelClub[];
+}
+
+const UNIQUE_VIOLATION = '23505';
+
+export async function addPadelClub(
+  input: NewClubInput,
+): Promise<{ club: PadelClub | null; error: string | null }> {
+  // Cast like updateAmbassadorProfile: the typed client resolves writes to `never` here.
+  const { data, error } = await (supabase as any)
+    .from('padel_clubs')
+    .insert({ name: input.name.trim(), town: normalizeOptionalText(input.town) })
+    .select()
+    .single();
+
+  if (error) {
+    return {
+      club: null,
+      error: error.code === UNIQUE_VIOLATION ? 'That club is already in the list.' : error.message,
+    };
+  }
+  return { club: data as PadelClub, error: null };
 }
 
 // ─── Ambassador-side queries ───────────────────────────────────────────────────

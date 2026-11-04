@@ -1,4 +1,4 @@
-import { AmbassadorRanking, InstagramPost, DailyMetric, Gender } from './types';
+import { AmbassadorRanking, ClubSummary, InstagramPost, DailyMetric, Gender } from './types';
 
 export interface AmbassadorListItem {
   id: string;
@@ -21,6 +21,10 @@ export interface AmbassadorProfileData {
   lta_player_id: string | null;
   discount_code: string | null;
   commission_rate: number | null;
+  team_role: string | null;
+  training_location: string | null;
+  home_club_id: string | null;
+  home_club: ClubSummary | null;
 }
 
 export interface InstagramAnalyticsData {

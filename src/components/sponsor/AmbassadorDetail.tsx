@@ -10,6 +10,9 @@ import {
   deleteRanking,
 } from '../../lib/queries';
 import { SalesCommissions } from './SalesCommissions';
+import { usePadelClubs } from '../../hooks/usePadelClubs';
+import { ClubPicker } from '../shared/ClubPicker';
+import { buildProfileSubtitle, normalizeOptionalText } from '../../lib/clubs.utils';
 import { AmbassadorProfileData, InstagramAnalyticsData, RankingsData } from '../../lib/queryTypes';
 import { InstagramPost, AmbassadorRanking } from '../../lib/types';
 import {
@@ -41,6 +44,8 @@ export function AmbassadorDetail() {
   if (loading) return <div className="spinner" />;
   if (!profile) return <p className="alert-error">Ambassador not found.</p>;
 
+  const subtitle = buildProfileSubtitle(profile);
+
   return (
     <div>
       <div className="flex items-center gap-2 mb-1">
@@ -54,6 +59,7 @@ export function AmbassadorDetail() {
       <div className="flex items-start justify-between mb-1">
         <div>
           <h1 className="heading-page">{profile.full_name ?? '—'}</h1>
+          {subtitle && <p className="text-muted">{subtitle}</p>}
           {profile.instagram_handle && (
             <p className="text-sm text-gray-400">@{profile.instagram_handle}</p>
           )}
@@ -128,6 +134,10 @@ function EditPanel({
   const [commissionRate, setCommissionRate] = useState(
     profile.commission_rate != null ? String(profile.commission_rate) : '10',
   );
+  const [teamRole, setTeamRole] = useState(profile.team_role ?? '');
+  const [trainingLocation, setTrainingLocation] = useState(profile.training_location ?? '');
+  const [homeClubId, setHomeClubId] = useState(profile.home_club_id ?? '');
+  const { clubs, addClub } = usePadelClubs();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -147,6 +157,9 @@ function EditPanel({
       lta_player_id: ltaPlayerId.trim() || null,
       discount_code: discountCode.trim().toLowerCase() || null,
       commission_rate: isNaN(parsedRate) ? null : parsedRate,
+      team_role: normalizeOptionalText(teamRole),
+      training_location: normalizeOptionalText(trainingLocation),
+      home_club_id: homeClubId || null,
     };
 
     const { error: saveError } = await updateAmbassadorProfile(ambassadorId, fields);
@@ -156,7 +169,10 @@ function EditPanel({
       return;
     }
 
-    onSave(fields);
+    const homeClub =
+      clubs.find((club) => club.id === homeClubId) ??
+      (profile.home_club?.id === homeClubId ? profile.home_club : null);
+    onSave({ ...fields, home_club: homeClub });
   }
 
   return (
@@ -259,6 +275,40 @@ function EditPanel({
             <p className="text-xs text-gray-400 mt-1">
               Percentage of order total paid as commission
             </p>
+          </div>
+          <div>
+            <label htmlFor="team-role" className="input-label">
+              Team role
+            </label>
+            <input
+              id="team-role"
+              className="input"
+              value={teamRole}
+              onChange={(e) => setTeamRole(e.target.value)}
+              placeholder="Team captain"
+            />
+            <p className="text-hint mt-1">Shown on the ambassador's profile</p>
+          </div>
+          <div>
+            <label htmlFor="training-location" className="input-label">
+              City / region
+            </label>
+            <input
+              id="training-location"
+              className="input"
+              value={trainingLocation}
+              onChange={(e) => setTrainingLocation(e.target.value)}
+              placeholder="Leeds, Yorkshire"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <ClubPicker
+              id="home-club"
+              clubs={clubs}
+              value={homeClubId}
+              onChange={setHomeClubId}
+              onAddClub={addClub}
+            />
           </div>
         </div>
         <div>

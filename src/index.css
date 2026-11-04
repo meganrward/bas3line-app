@@ -49,6 +49,9 @@ body {
   .heading-section {
     @apply text-sm font-semibold text-gray-700;
   }
+  .text-hint {
+    @apply text-xs text-gray-400;
+  }
   .text-muted {
     @apply text-sm text-gray-500;
   }
