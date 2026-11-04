@@ -221,7 +221,6 @@ supabase secrets set SERVICE_ROLE_KEY=<value> PADEL_API_TOKEN=<value> DISCOUNT_W
 - **Supabase redirect URLs**: Production GitHub Pages URL needs to be added in Supabase Auth settings (Site URL + Redirect URLs) for login to work on prod.
 - **Routing on GitHub Pages**: `BrowserRouter` has no basename but the site is served from the `/bas3line-app` subpath. Check this works on prod (Phase 1).
 - **LTA scraper** is fragile (HTML parsing). It has no official API to fall back on. Log failures and show "last updated" so stale data is visible.
-- **Dead code**: `addManualRanking` and `deleteRanking` in `src/lib/queries.ts` are unused.
 - **WooCommerce snippet**: the WordPress code that calls `record-discount-sale` is not in this repo. Commit it (roadmap Phase 4).
 - **Stale plan files** in the repo root (`right-now-i-want-fluttering-perlis.md` uses old `coupon_*` names; `hi-i-have-an-linear-shamir.md` names old athlete components).
 - **Deno VS Code errors** in `supabase/functions/*/index.ts` are cosmetic — install the `denoland.vscode-deno` VS Code extension to resolve.

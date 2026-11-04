@@ -153,26 +153,6 @@ export async function loadInstagramAnalytics(
   };
 }
 
-export async function addManualRanking(
-  ambassadorId: string,
-  source: 'lta',
-  category: string,
-  rank: number,
-): Promise<{ data: import('./types').AmbassadorRanking | null; error: string | null }> {
-  const { data, error } = await (supabase as any)
-    .from('ambassador_rankings')
-    .upsert(
-      { ambassador_id: ambassadorId, source, category, rank },
-      { onConflict: 'ambassador_id,source,category' },
-    )
-    .select()
-    .single();
-  return {
-    data: data as import('./types').AmbassadorRanking | null,
-    error: error?.message ?? null,
-  };
-}
-
 export async function deleteRanking(rankingId: string): Promise<{ error: string | null }> {
   const { error } = await supabase.from('ambassador_rankings').delete().eq('id', rankingId);
   return { error: error?.message ?? null };
