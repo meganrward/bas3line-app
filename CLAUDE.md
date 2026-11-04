@@ -161,11 +161,22 @@ All visual styling lives here. Key classes:
 ## Local development
 
 ```bash
-npm start                    # dev server on localhost:3000
-supabase start               # local Supabase (optional)
-supabase db push             # apply migrations to remote
-supabase functions deploy invite-athlete  # deploy edge function
+supabase start               # local Supabase (Docker) — applies migrations + seed.sql
+npm start                    # dev server on localhost:3000 — uses LOCAL Supabase
+supabase db reset            # wipe local DB, re-run migrations + seed
+supabase functions serve --env-file supabase/.env.local   # run edge functions locally (optional)
+supabase db push             # apply migrations to REMOTE (prod) — only when ready to ship
+supabase functions deploy invite-athlete  # deploy edge function to remote
 ```
+
+**Local vs prod Supabase**
+
+- `.env` points at the hosted (prod) project. `.env.development.local` (gitignored) overrides it for `npm start` only, pointing at local Supabase. Builds/CI never read it.
+- Local ports are shifted to `553xx` in `supabase/config.toml` (API 55321, DB 55322, Studio 55323, Mailpit 55324) to avoid clashing with other local Supabase projects on the default `543xx` ports.
+- `supabase/seed.sql` is local-only (known passwords). Logins: `sponsor@bas3line.test`, `ambassador1@bas3line.test`, `ambassador2@bas3line.test` — password `password123`.
+- Invite emails sent locally land in Mailpit at http://127.0.0.1:55324, not real inboxes.
+- Workflow: write migration → `supabase db reset` locally to verify → `supabase db push` to prod.
+- `REACT_APP_MONITOR_SUPABASE_*` in `.env` is a separate project and is not overridden locally.
 
 Edge function secret (never commit):
 ```bash
