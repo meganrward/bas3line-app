@@ -49,7 +49,7 @@ Single-sponsor. One sponsor organisation, multiple ambassadors.
 - **No inline Tailwind for visual styling** — all visual classes live in `src/index.css` as semantic `@layer components` classes (`.btn-primary`, `.card`, `.input`, etc.). Only layout/spacing utilities may appear inline in components (`flex`, `gap-4`, `max-w-2xl`, etc.)
 - **Thin components** — data shaping, validation, formatting and business logic go in pure functions in `src/lib/*.utils.ts`, with unit tests
 - **Secrets** — `SERVICE_ROLE_KEY` (and the WooCommerce / padel API secrets) must never be in the frontend or committed. They live only as Supabase secrets set via CLI and are used only in Edge Functions. Note the name is `SERVICE_ROLE_KEY`, not `SUPABASE_SERVICE_ROLE_KEY`: Supabase reserves the `SUPABASE_` prefix.
-- **Edge functions must verify the caller.** An `Authorization` header is not enough: the public anon key passes the gateway. Use `authorizeAmbassadorAccess` from `supabase/functions/_shared/` (verifies the user, then sponsor/staff or the ambassador themselves, or the scheduled job via the `X-Cron-Secret` header matching `CRON_SECRET`), and read external IDs from the database rather than trusting the request body. Only the scheduled job may send `force` to skip the FIP cache.
+- **Edge functions must verify the caller.** An `Authorization` header is not enough: the public anon key passes the gateway. Use `authorizeAmbassadorAccess` from `supabase/functions/_shared/` (verifies the user, then sponsor/staff or the ambassador themselves, or the scheduled job via the `X-Cron-Secret` header matching `CRON_SECRET`), and read external IDs from the database rather than trusting the request body. Only the scheduled job may send `force` to skip the FIP cache. `get-fip-ranking` and `get-lta-ranking` have `verify_jwt = false` in `supabase/config.toml` (like `record-discount-sale`): the gateway's JWT check is off, so this in-function check is the only gate. Keep it.
 - `npm ci --legacy-peer-deps` — TypeScript 6 conflicts with react-scripts peer dep, always use this flag in CI
 - Git: Megan makes all commits. Don't commit or push.
 
@@ -143,6 +143,10 @@ discount_code_sales   ambassador_id, discount_code, order_id (unique), order_tot
 
 Ambassadors can update their own `ambassador_profiles` row, but the `guard_ambassador_profile_update` trigger only lets them change the columns in its `editable_columns` allow-list (currently `bio`, `training_location`). Everything else (`commission_rate`, `discount_code`, IDs, `sponsor_id`) is sponsor-only. Sponsors, staff and service-role code are unrestricted. To let ambassadors edit another column, redefine that function in a new migration and add a pgTAP test. Tests live in `supabase/tests/database/` and run with `supabase test db`.
 
+### Scheduled ranking refresh
+
+pg_cron (UTC) calls `get-fip-ranking` / `get-lta-ranking` for every ambassador via `public.refresh_rankings(source)` (`20260710000000_schedule_ranking_refresh.sql`). FIP is polled Monday 08/12/16 plus Tuesday 08; LTA Friday 10:30/12/14/17 plus Saturday 08. FIP is forced past its 24h cache. It needs two Vault secrets on the database, `project_url` and `cron_secret` (same value as the `CRON_SECRET` edge function secret); without them a run does nothing. Only the job owner can run it. To check runs: `select * from cron.job_run_details order by start_time desc limit 10;` and `select id, status_code, created from net._http_response order by created desc limit 10;`. To change the timing, edit the schedules in a new migration with `cron.schedule` (same job name replaces it).
+
 ### Table access rules
 
 - The signed-out `anon` role has **no** privileges on public tables (`20260709000000_revoke_anon_table_access.sql`), and new tables don't inherit any. Don't grant to `anon`. A pgTAP test enforces this.
@@ -218,6 +222,7 @@ deno test supabase/functions/_shared   # unit tests for shared edge function cod
 supabase functions serve --env-file supabase/.env.local   # run edge functions locally (optional)
 supabase db push             # apply migrations to REMOTE (prod) — only when ready to ship
 supabase functions deploy <name>   # deploy an edge function to remote
+supabase functions deploy get-fip-ranking get-lta-ranking record-discount-sale --no-verify-jwt   # these authenticate callers themselves; verify the "Enforce JWT Verification" toggle is OFF in the dashboard afterwards
 ```
 
 **Local vs prod Supabase**

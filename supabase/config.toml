@@ -374,6 +374,15 @@ allow_dynamic_registration = false
 [functions.record-discount-sale]
 verify_jwt = false
 
+# These authenticate the caller themselves (signed-in user, or the scheduled job's
+# X-Cron-Secret), so the gateway's JWT check is redundant. It also rejects the new
+# sb_publishable_ keys, which are not JWTs.
+[functions.get-fip-ranking]
+verify_jwt = false
+
+[functions.get-lta-ranking]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.
