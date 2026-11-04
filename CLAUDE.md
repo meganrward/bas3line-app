@@ -125,7 +125,7 @@ discount_code_sales   ambassador_id, discount_code, order_id (unique), order_tot
                       sponsor/staff read all, ambassador reads own, only service_role inserts
 ```
 
-- `posts` is an orphaned leftover table from the old design — ignore it.
+- Instagram `posts` live in the separate monitor project, not this database. (The old orphaned `public.posts` table is dropped by `20260705000000_drop_orphaned_posts_table.sql`.)
 - Staff roles live in `sponsor_staff.staff_role`; the old `'admin'|'staff'` values are gone.
 
 ### RLS / auth helpers
