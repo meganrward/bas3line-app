@@ -1,0 +1,21 @@
+{
+  "root": true,
+  "extends": [
+    "react-app",
+    "react-app/jest",
+    "plugin:sonarjs/recommended-legacy",
+    "prettier"
+  ],
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx"],
+      "parserOptions": {
+        "project": "./tsconfig.json"
+      }
+    }
+  ],
+  "rules": {
+    "sonarjs/deprecation": "off"
+  },
+  "ignorePatterns": ["build", "node_modules", "supabase"]
+}

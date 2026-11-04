@@ -23,18 +23,16 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "lint": "eslint src --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src",
     "eject": "react-scripts eject"
   },
   "overrides": {
     "react-scripts": {
       "typescript": "$typescript"
     }
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
   },
   "browserslist": {
     "production": [
@@ -52,7 +50,12 @@
     "@tailwindcss/forms": "^0.5.11",
     "@types/jest": "^30.0.0",
     "autoprefixer": "^10.5.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-sonarjs": "^3.0.7",
     "postcss": "^8.5.15",
-    "tailwindcss": "^3.4.19"
+    "prettier": "^3.9.10",
+    "tailwindcss": "^3.4.19",
+    "ts-api-utils": "^2.5.0"
   }
 }
