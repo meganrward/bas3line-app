@@ -3,7 +3,7 @@
 -- Seed users: ...0001 sponsor staff, ...0002 ambassador1, ...0003 ambassador2.
 
 begin;
-select plan(8);
+select plan(9);
 
 -- ── As ambassador1 ───────────────────────────────────────────────────────────
 set local role authenticated;
@@ -35,6 +35,13 @@ select throws_ok(
   '42501',
   null,
   'ambassador cannot change their own discount code'
+);
+
+select throws_ok(
+  $$update public.ambassador_profiles set team_role = 'Captain' where id = '00000000-0000-0000-0000-000000000002'$$,
+  '42501',
+  null,
+  'ambassador cannot change their own team role'
 );
 
 select throws_ok(

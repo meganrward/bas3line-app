@@ -75,4 +75,20 @@ begin
     ('00000000-0000-0000-0000-000000000002', 'ALEX10', 'DEV-1002',  80.00,  8.00, now() - interval '1 day'),
     ('00000000-0000-0000-0000-000000000003', 'SAM10',  'DEV-1003', 200.00, 25.00, now() - interval '2 days')
   on conflict do nothing;
+
+  -- ── Padel clubs, team roles and home clubs ──────────────────────────────────
+  insert into public.padel_clubs (name, town, region) values
+    ('Padel Club London', 'London', 'Greater London'),
+    ('Padel Club Leeds',  'Leeds',  'Yorkshire and the Humber')
+  on conflict do nothing;
+
+  update public.ambassador_profiles
+     set team_role = 'Ambassador',
+         home_club_id = (select id from public.padel_clubs where name = 'Padel Club London')
+   where id = '00000000-0000-0000-0000-000000000002';
+
+  update public.ambassador_profiles
+     set team_role = 'Team captain',
+         home_club_id = (select id from public.padel_clubs where name = 'Padel Club Leeds')
+   where id = '00000000-0000-0000-0000-000000000003';
 end $$;
