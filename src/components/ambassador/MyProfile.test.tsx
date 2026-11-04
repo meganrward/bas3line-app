@@ -14,6 +14,7 @@ import {
 } from '../../lib/queries';
 import { AmbassadorProfileData } from '../../lib/queryTypes';
 
+jest.mock('../../lib/supabase', () => ({ supabase: {} }));
 jest.mock('../../hooks/useAuth');
 jest.mock('../../lib/queries', () => ({
   addPadelClub: jest.fn(),
