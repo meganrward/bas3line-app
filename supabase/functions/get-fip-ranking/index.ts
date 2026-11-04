@@ -16,7 +16,8 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { ambassador_id }: { ambassador_id: string } = await req.json();
+    const { ambassador_id, force }: { ambassador_id: string; force?: boolean } =
+      await req.json();
 
     if (!ambassador_id) {
       return new Response(
@@ -29,6 +30,8 @@ Deno.serve(async (req: Request) => {
     if (!authorization.ok) return authorization.response;
 
     const { serviceClient: supabase, ambassador } = authorization;
+    // Only the scheduled job may skip the cache. Users are throttled by it.
+    const bypassCache = force === true && authorization.via === "cron";
     const slug = ambassador.fip_player_slug;
 
     if (!slug) {
@@ -56,7 +59,7 @@ Deno.serve(async (req: Request) => {
       .limit(1)
       .maybeSingle();
 
-    if (cached) {
+    if (cached && !bypassCache) {
       const ageHours =
         (Date.now() - new Date(cached.fetched_at).getTime()) / 3_600_000;
       if (ageHours < CACHE_TTL_HOURS) {

@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { matchesCronSecret } from "./cron-secret.ts";
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,8 +12,17 @@ type AmbassadorIds = {
   lta_player_id: string | null;
 };
 
+// "user": a signed-in sponsor/staff member or the ambassador themselves.
+// "cron": the scheduled refresh job, authenticated by the shared CRON_SECRET.
+export type AccessKind = "user" | "cron";
+
 type Authorization =
-  | { ok: true; serviceClient: SupabaseClient; ambassador: AmbassadorIds }
+  | {
+    ok: true;
+    serviceClient: SupabaseClient;
+    ambassador: AmbassadorIds;
+    via: AccessKind;
+  }
   | { ok: false; response: Response };
 
 function jsonError(error: string, status: number): Authorization {
@@ -25,13 +35,12 @@ function jsonError(error: string, status: number): Authorization {
   };
 }
 
-// Verifies the caller's JWT and that they may act on `ambassadorId`: sponsor/staff,
-// or the ambassador themselves. Returns a service-role client plus the ambassador's
-// stored external IDs, so callers never have to trust IDs sent in the request body.
-export async function authorizeAmbassadorAccess(
+// Returns an error response if the caller is not allowed to act on `ambassadorId`,
+// or null if they are.
+async function checkUserAccess(
   req: Request,
   ambassadorId: string,
-): Promise<Authorization> {
+): Promise<Authorization | null> {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return jsonError("Unauthorized", 401);
 
@@ -50,6 +59,30 @@ export async function authorizeAmbassadorAccess(
     if (!isSponsorOrStaff) return jsonError("Forbidden", 403);
   }
 
+  return null;
+}
+
+// Verifies who is calling and that they may act on `ambassadorId`. Returns a
+// service-role client plus the ambassador's stored external IDs, so callers never
+// have to trust IDs sent in the request body.
+export async function authorizeAmbassadorAccess(
+  req: Request,
+  ambassadorId: string,
+): Promise<Authorization> {
+  let via: AccessKind;
+
+  const cronHeader = req.headers.get("X-Cron-Secret");
+  if (cronHeader !== null) {
+    // A cron header must be valid; never fall back to user auth with a bad secret.
+    const valid = await matchesCronSecret(cronHeader, Deno.env.get("CRON_SECRET"));
+    if (!valid) return jsonError("Unauthorized", 401);
+    via = "cron";
+  } else {
+    const denied = await checkUserAccess(req, ambassadorId);
+    if (denied) return denied;
+    via = "user";
+  }
+
   const serviceClient = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SERVICE_ROLE_KEY")!,
@@ -63,5 +96,5 @@ export async function authorizeAmbassadorAccess(
 
   if (!ambassador) return jsonError("Ambassador not found", 404);
 
-  return { ok: true, serviceClient, ambassador };
+  return { ok: true, serviceClient, ambassador, via };
 }

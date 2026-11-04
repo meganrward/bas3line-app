@@ -49,7 +49,7 @@ Single-sponsor. One sponsor organisation, multiple ambassadors.
 - **No inline Tailwind for visual styling** — all visual classes live in `src/index.css` as semantic `@layer components` classes (`.btn-primary`, `.card`, `.input`, etc.). Only layout/spacing utilities may appear inline in components (`flex`, `gap-4`, `max-w-2xl`, etc.)
 - **Thin components** — data shaping, validation, formatting and business logic go in pure functions in `src/lib/*.utils.ts`, with unit tests
 - **Secrets** — `SERVICE_ROLE_KEY` (and the WooCommerce / padel API secrets) must never be in the frontend or committed. They live only as Supabase secrets set via CLI and are used only in Edge Functions. Note the name is `SERVICE_ROLE_KEY`, not `SUPABASE_SERVICE_ROLE_KEY`: Supabase reserves the `SUPABASE_` prefix.
-- **Edge functions must verify the caller.** An `Authorization` header is not enough: the public anon key passes the gateway. Use `authorizeAmbassadorAccess` from `supabase/functions/_shared/` (verifies the user, then sponsor/staff or the ambassador themselves), and read external IDs from the database rather than trusting the request body.
+- **Edge functions must verify the caller.** An `Authorization` header is not enough: the public anon key passes the gateway. Use `authorizeAmbassadorAccess` from `supabase/functions/_shared/` (verifies the user, then sponsor/staff or the ambassador themselves, or the scheduled job via the `X-Cron-Secret` header matching `CRON_SECRET`), and read external IDs from the database rather than trusting the request body. Only the scheduled job may send `force` to skip the FIP cache.
 - `npm ci --legacy-peer-deps` — TypeScript 6 conflicts with react-scripts peer dep, always use this flag in CI
 - Git: Megan makes all commits. Don't commit or push.
 
@@ -214,6 +214,7 @@ supabase start               # local Supabase (Docker) — applies migrations + 
 npm start                    # dev server on localhost:3000 — uses LOCAL Supabase
 supabase db reset            # wipe local DB, re-run migrations + seed
 supabase test db             # run pgTAP RLS tests (needs the seeded local DB)
+deno test supabase/functions/_shared   # unit tests for shared edge function code
 supabase functions serve --env-file supabase/.env.local   # run edge functions locally (optional)
 supabase db push             # apply migrations to REMOTE (prod) — only when ready to ship
 supabase functions deploy <name>   # deploy an edge function to remote
@@ -230,7 +231,7 @@ supabase functions deploy <name>   # deploy an edge function to remote
 
 Edge function secrets (never commit):
 ```bash
-supabase secrets set SERVICE_ROLE_KEY=<value> PADEL_API_TOKEN=<value> DISCOUNT_WEBHOOK_SECRET=<value>
+supabase secrets set SERVICE_ROLE_KEY=<value> PADEL_API_TOKEN=<value> DISCOUNT_WEBHOOK_SECRET=<value> CRON_SECRET=<value>
 ```
 
 ---
