@@ -1,10 +1,7 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import {
+  authorizeAmbassadorAccess,
+  corsHeaders,
+} from "../_shared/authorize-ambassador-access.ts";
 
 const LTA_BASE = "https://competitions.lta.org.uk";
 const LTA_RANKING_LIST_URL = `${LTA_BASE}/ranking/ranking.aspx?rid=305`;
@@ -124,28 +121,27 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const { ambassador_id }: { ambassador_id: string } = await req.json();
 
-    const { player_id, ambassador_id }: { player_id: string; ambassador_id: string } =
-      await req.json();
-
-    if (!player_id || !ambassador_id) {
+    if (!ambassador_id) {
       return new Response(
-        JSON.stringify({ error: "player_id and ambassador_id are required" }),
+        JSON.stringify({ error: "ambassador_id is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SERVICE_ROLE_KEY")!,
-    );
+    const authorization = await authorizeAmbassadorAccess(req, ambassador_id);
+    if (!authorization.ok) return authorization.response;
+
+    const { serviceClient: supabase, ambassador } = authorization;
+    const player_id = ambassador.lta_player_id;
+
+    if (!player_id) {
+      return new Response(
+        JSON.stringify({ error: "Ambassador has no LTA player ID set" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     const { data: cached } = await supabase
       .from("ambassador_rankings")

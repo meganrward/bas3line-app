@@ -1,10 +1,7 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import {
+  authorizeAmbassadorAccess,
+  corsHeaders,
+} from "../_shared/authorize-ambassador-access.ts";
 
 const CACHE_TTL_HOURS = 24;
 
@@ -19,20 +16,24 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const { ambassador_id }: { ambassador_id: string } = await req.json();
+
+    if (!ambassador_id) {
+      return new Response(
+        JSON.stringify({ error: "ambassador_id is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
-    const { slug, ambassador_id }: { slug: string; ambassador_id: string } =
-      await req.json();
+    const authorization = await authorizeAmbassadorAccess(req, ambassador_id);
+    if (!authorization.ok) return authorization.response;
 
-    if (!slug || !ambassador_id) {
+    const { serviceClient: supabase, ambassador } = authorization;
+    const slug = ambassador.fip_player_slug;
+
+    if (!slug) {
       return new Response(
-        JSON.stringify({ error: "slug and ambassador_id are required" }),
+        JSON.stringify({ error: "Ambassador has no FIP player slug set" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -44,11 +45,6 @@ Deno.serve(async (req: Request) => {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SERVICE_ROLE_KEY")!,
-    );
 
     // Return cached data if fresh enough
     const { data: cached } = await supabase
