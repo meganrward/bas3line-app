@@ -2,9 +2,29 @@
 
 ## What this is
 
-A sponsor–athlete management portal for a padel sportswear company called **Bas3line**. Sponsors manage their sponsored athletes; athletes post content (Instagram, tournament results, etc.), earn points per approved post, and redeem points for voucher codes.
+An ambassador management portal for a padel sportswear company called **Bas3line**. Sponsor staff manage their ambassadors (profiles, rankings, Instagram engagement, discount-code sales and commission). Ambassadors are meant to get their own app with five areas, per the sponsor's brief:
 
-Currently a single-sponsor MVP. One sponsor organisation, multiple athletes, one portal.
+1. **Your Profile** — role in the team, location, LTA ranking
+2. **Your Progress** — online (Instagram) engagement over time
+3. **Your Sales** — every sale and commission
+4. **Marketplace** — full product range at wholesale prices, ambassadors only
+5. **Cash or Kit** — swap commission for gear, or have it paid out
+
+Single-sponsor. One sponsor organisation, multiple ambassadors.
+
+### Current state vs roadmap
+
+- **Built (sponsor-only):** ambassador list/add/edit, FIP + LTA rankings, Instagram analytics tab, sales and commission tab, WooCommerce sales webhook.
+- **Not built:** any ambassador-facing UI (every login currently goes to `/sponsor`), team role and location fields, commission ledger and payout requests, marketplace.
+- **Roadmap phases:** 0 housekeeping/security, 1 ambassador shell (`/ambassador/*`), 2 profile, 3 progress, 4 sales, 5 cash or kit, 6 marketplace.
+- The old points/posts/vouchers design was dropped in `20260622000000_pivot_to_ambassadors.sql`. Don't resurrect it.
+
+### Decisions already made
+
+- Team role is a sponsor-assigned text label.
+- Cash or kit is a request-based ledger. The sponsor approves and pays manually outside the app (no Stripe). Kit credit converts at face value; commission accrues on sale (no return-window hold).
+- The production store is **WooCommerce**. The marketplace browses in-app and checks out on the store.
+- LTA has no public API (confirmed by email), so scraping `competitions.lta.org.uk` stays.
 
 ---
 
@@ -15,7 +35,7 @@ Currently a single-sponsor MVP. One sponsor organisation, multiple athletes, one
 | Frontend | React 19, TypeScript, CRA (react-scripts 5.0.1) |
 | Styling | Tailwind CSS v3 + @tailwindcss/forms |
 | Routing | React Router v6 |
-| Backend / DB / Auth | Supabase (PostgreSQL, RLS, Edge Functions, Auth) |
+| Backend / DB / Auth | Supabase (PostgreSQL 17, RLS, Edge Functions, Auth) |
 | Deployment | GitHub Actions → GitHub Pages |
 
 ---
@@ -26,8 +46,11 @@ Currently a single-sponsor MVP. One sponsor organisation, multiple athletes, one
 - **No `useCallback`** — use plain async functions inside `useEffect`
 - **No abbreviations** in variable names (`sponsorId` not `sId`)
 - **No inline Tailwind for visual styling** — all visual classes live in `src/index.css` as semantic `@layer components` classes (`.btn-primary`, `.card`, `.input`, etc.). Only layout/spacing utilities may appear inline in components (`flex`, `gap-4`, `max-w-2xl`, etc.)
-- **SERVICE_ROLE_KEY must never be in the frontend or committed to git** — lives only as a Supabase secret set via CLI, used only in Edge Functions
+- **Thin components** — data shaping, validation, formatting and business logic go in pure functions in `src/lib/*.utils.ts`, with unit tests
+- **Secrets** — `SERVICE_ROLE_KEY` (and the WooCommerce / padel API secrets) must never be in the frontend or committed. They live only as Supabase secrets set via CLI and are used only in Edge Functions. Note the name is `SERVICE_ROLE_KEY`, not `SUPABASE_SERVICE_ROLE_KEY`: Supabase reserves the `SUPABASE_` prefix.
+- **Edge functions must verify the caller.** An `Authorization` header is not enough: the public anon key passes the gateway. Use `authorizeAmbassadorAccess` from `supabase/functions/_shared/` (verifies the user, then sponsor/staff or the ambassador themselves), and read external IDs from the database rather than trusting the request body.
 - `npm ci --legacy-peer-deps` — TypeScript 6 conflicts with react-scripts peer dep, always use this flag in CI
+- Git: Megan makes all commits. Don't commit or push.
 
 ---
 
@@ -47,78 +70,78 @@ Logo SVGs are in `src/assets/`: `logo.svg` (mark only), `name.svg` (wordmark), `
 
 ```
 src/
+  App.tsx           Routes: /login, /sponsor/* (role-guarded), * → /login
   assets/           logo.svg, name.svg, name_and_slogan.svg
   components/
-    auth/           LoginPage.tsx, ProtectedRoute.tsx
-    layout/         SponsorLayout.tsx, AthleteLayout.tsx
-    shared/         Logo.tsx
-    sponsor/        AthletesList, AthleteDetail, AddAthleteForm,
-                    PackageManager, PostTypeManager, PostsReviewFeed,
-                    VoucherManager
-    athlete/        MyProfile, CreatePost, MyPosts,
-                    PointsDashboard, VoucherRedemption
+    auth/           LoginPage, ProtectedRoute (+ tests)
+    layout/         SponsorLayout
+    shared/         Logo
+    sponsor/        AmbassadorsList, AddAmbassadorForm,
+                    AmbassadorDetail (tabs: Instagram, Rankings, Sales; edit panel),
+                    SalesCommissions
   hooks/            useAuth.ts
   lib/
-    supabase.ts     Supabase client (reads REACT_APP_SUPABASE_URL / ANON_KEY)
-    types.ts        Shared TS interfaces matching DB schema
-    queryTypes.ts   Return-type interfaces for query functions
-    queries.ts      All Supabase query functions (centralised)
+    supabase.ts         Main Supabase client (REACT_APP_SUPABASE_URL / ANON_KEY)
+    supabaseMonitor.ts  Client for the separate monitor project (Instagram data)
+    types.ts            Shared TS interfaces matching DB schema
+    queryTypes.ts       Return-type interfaces for query functions
+    queries.ts          All Supabase query functions (centralised)
 supabase/
   functions/
-    invite-athlete/ Edge Function — invites athlete by email using service role key,
-                    pre-creates athlete_profiles row
-  migrations/       Applied in order; push with `supabase db push`
-public/
-  index.html        Title: "Bas3line". Add Adobe Fonts kit link here when ready.
-src/index.css       ALL visual design — brand tokens via Tailwind @apply,
-                    semantic component classes
+    _shared/                  authorize-ambassador-access.ts (auth helper)
+    invite-athlete/           Invites an ambassador by email; creates their ambassador_profiles row
+    get-fip-ranking/          Fetches FIP ranking from padelapi.org (PADEL_API_TOKEN), caches 24h
+    get-lta-ranking/          Scrapes competitions.lta.org.uk, caches by LTA "last updated"
+    record-discount-sale/     WooCommerce webhook (verify_jwt=false; X-Webhook-Secret header)
+  migrations/       Applied in order
+  seed.sql          LOCAL-only seed data
+public/index.html   Title: "Bas3line"
+src/index.css       ALL visual design — brand tokens via Tailwind @apply, semantic component classes
 tailwind.config.js  Brand colour tokens under `brand.*`
-.github/workflows/
-  deploy.yml        Push to main → builds → deploys to gh-pages branch
+.github/workflows/deploy.yml   Push to main → builds → deploys to gh-pages branch
 ```
+
+### Related repos (`~/projects/bas3line/`, built by a coworker)
+
+- `bas3line-ambassador-connect` — static Netlify page where an ambassador connects Instagram (native Instagram Login OAuth). Its edge function lives in the **monitor** Supabase project.
+- `bas3line-ambassador-monitor` — Node worker, hourly. Pulls Instagram Graph API data and writes `ambassadors` (including access tokens), `posts`, `daily_metrics`, `alerts`, `collection_state` in the **monitor** Supabase project. Refreshes tokens before their 60-day expiry.
+- The monitor project holds Instagram access tokens. Never expose that table to ambassadors. The planned `get-my-engagement` edge function reads it with a service key and returns only the caller's metrics.
 
 ---
 
-## Database schema (key tables)
+## Database schema (key tables, main project)
 
 ```
-profiles          id (= auth.users.id), role ('sponsor'|'athlete'), full_name
-sponsors          id, name, logo_url, website_url
-sponsor_staff     id, sponsor_id, user_id, role ('admin'|'staff')  ← allows multiple users per sponsor
-sponsorship_packages  id, sponsor_id, name, description
-athlete_profiles  id (= profiles.id), sponsor_id, package_id, ranking,
-                  clubs, training_location, racket_model, instagram_handle,
-                  bio, points_balance
-post_types        id, sponsor_id, name, points_value, description, is_active
-posts             id, athlete_id, post_type_id, title, content, link_url,
-                  status ('pending'|'approved'|'rejected'), points_awarded,
-                  reviewed_by, reviewed_at
-                  NOTE: two FKs to profiles (athlete_id + reviewed_by).
-                  Always specify FK explicitly: profiles!posts_athlete_id_fkey(full_name)
-points_transactions  id, athlete_id, post_id, points, description
-voucher_codes     id, sponsor_id, code, points_required, description,
-                  is_used, used_by, used_at
+profiles              id (= auth.users.id), role ('sponsor'|'ambassador'), full_name
+sponsors              id, name, logo_url, website_url
+sponsor_staff         id, sponsor_id, user_id, staff_role ('manager'|'athlete_manager'|'ambassador_agent')
+ambassador_profiles   id (= profiles.id), sponsor_id, instagram_handle, instagram_user_id, bio, gender,
+                      fip_player_slug, lta_player_id (competitions UUID), lta_membership_number,
+                      discount_code (unique, stored lowercase), commission_rate (default 10.00)
+ambassador_rankings   ambassador_id, source ('fip'|'lta'), category, rank, points_value, fetched_at
+                      unique per (ambassador, source, category); sponsor-only write via service role
+discount_code_sales   ambassador_id, discount_code, order_id (unique), order_total,
+                      commission_amount, sale_date
+                      sponsor/staff read all, ambassador reads own, only service_role inserts
 ```
+
+- `posts` is an orphaned leftover table from the old design — ignore it.
+- Staff roles live in `sponsor_staff.staff_role`; the old `'admin'|'staff'` values are gone.
 
 ### RLS / auth helpers
 
 - `current_user_role()` — returns `profiles.role` for the current user
-- `is_sponsor_or_staff()` — returns true if role = 'sponsor' OR user exists in sponsor_staff. **Use this, not `current_user_role() = 'sponsor'`**, so staff users pass sponsor checks.
-- Both are `SECURITY DEFINER` functions
-
-### Key DB notes
-
-- `approve_post(post_id uuid)` — Postgres function that sets status='approved', awards points, inserts points_transaction, updates points_balance
-- `redeem_voucher(voucher_id uuid)` — Postgres function for voucher redemption
-- `racket_brand` column exists in athlete_profiles DB but is NOT used in the UI (kept nullable, removed from TypeScript types)
+- `is_sponsor_or_staff()` — true if role = 'sponsor' OR user exists in sponsor_staff. **Use this, not `current_user_role() = 'sponsor'`**, so staff users pass sponsor checks.
+- `current_ambassador_sponsor_id()` — the calling ambassador's sponsor
+- All are `SECURITY DEFINER` functions
 
 ---
 
 ## useAuth hook
 
-`src/hooks/useAuth.ts` exposes: `{ user, profile, sponsorId, loading }`
+`src/hooks/useAuth.ts` exposes: `{ user, profile, sponsorId, staffRole, loading }`
 
-- `sponsorId` — resolves for both sponsor users (from `sponsors` table) and sponsor staff users (from `sponsor_staff` table)
+- `sponsorId` and `staffRole` come from the user's `sponsor_staff` row. Both are null for ambassadors.
 - Always check `sponsorId` in sponsor components, not `user.id`
 
 ---
@@ -131,7 +154,7 @@ All visual styling lives here. Key classes:
 |---|---|
 | `.btn-primary` | Brand-blue bg, white text, hover navy |
 | `.btn-secondary` | Gray bg |
-| `.btn-success` | Green bg (approve) |
+| `.btn-success` | Green bg |
 | `.btn-danger-text` | Red text link (delete) |
 | `.btn-muted-text` | Gray text link (deactivate) |
 | `.card` | White bg, rounded-xl, shadow-sm |
@@ -141,22 +164,28 @@ All visual styling lives here. Key classes:
 | `.heading-section` | sm semibold gray-700 |
 | `.table-col-header` | Table `<th>` |
 | `.badge` | Base pill |
-| `.badge-brand` | Blue tint pill (points) |
+| `.badge-brand` | Blue tint pill |
 | `.status-pending/approved/rejected` | Coloured status pills |
 | `.alert-error` | Red error block |
 | `.alert-success` | Green success block |
 | `.spinner` | Brand-blue loading ring |
 | `.nav-link` / `.nav-link-active` | Nav items |
-| `.points-card` | Navy bg hero card (points balance) |
+| `.points-card` | Navy hero card (left over from the points design; reusable for a balance card) |
+
+---
+
+## Quality gates
+
+Before work is done it must pass Prettier, ESLint and Sonar (`eslint-plugin-sonarjs`) with no warnings. Prefer many fast unit tests on the `lib/*.utils.ts` functions, React Testing Library flow tests for user-facing behaviour, and pgTAP tests for RLS. Lint, type-check and test steps are not yet wired into CI (roadmap Phase 0).
 
 ---
 
 ## CI/CD
 
-- Push to `main` → GitHub Actions builds and deploys to `gh-pages` branch
-- Secrets required in GitHub repo settings: `REACT_APP_SUPABASE_URL`, `REACT_APP_SUPABASE_ANON_KEY`
+- Push to `main` → GitHub Actions builds and deploys to `gh-pages` branch. It does not run tests or lint, and does not deploy migrations or edge functions.
+- Secrets required in GitHub repo settings: `REACT_APP_SUPABASE_URL`, `REACT_APP_SUPABASE_ANON_KEY` (and the monitor pair, `REACT_APP_MONITOR_SUPABASE_URL` / `_ANON_KEY`)
 - `npm ci --legacy-peer-deps` is required (TypeScript 6 vs react-scripts peer dep conflict)
-- Production URL is GitHub Pages URL — must be added to Supabase Auth → Site URL and Redirect URLs
+- Production URL is the GitHub Pages URL — must be added to Supabase Auth → Site URL and Redirect URLs
 
 ## Local development
 
@@ -166,7 +195,7 @@ npm start                    # dev server on localhost:3000 — uses LOCAL Supab
 supabase db reset            # wipe local DB, re-run migrations + seed
 supabase functions serve --env-file supabase/.env.local   # run edge functions locally (optional)
 supabase db push             # apply migrations to REMOTE (prod) — only when ready to ship
-supabase functions deploy invite-athlete  # deploy edge function to remote
+supabase functions deploy <name>   # deploy an edge function to remote
 ```
 
 **Local vs prod Supabase**
@@ -175,12 +204,12 @@ supabase functions deploy invite-athlete  # deploy edge function to remote
 - Local ports are shifted to `553xx` in `supabase/config.toml` (API 55321, DB 55322, Studio 55323, Mailpit 55324) to avoid clashing with other local Supabase projects on the default `543xx` ports.
 - `supabase/seed.sql` is local-only (known passwords). Logins: `sponsor@bas3line.test`, `ambassador1@bas3line.test`, `ambassador2@bas3line.test` — password `password123`.
 - Invite emails sent locally land in Mailpit at http://127.0.0.1:55324, not real inboxes.
-- Workflow: write migration → `supabase db reset` locally to verify → `supabase db push` to prod.
+- Workflow: write migration → `supabase db reset` locally to verify → `supabase db push` to prod. The CLI must be linked to the **main** project, not the monitor project.
 - `REACT_APP_MONITOR_SUPABASE_*` in `.env` is a separate project and is not overridden locally.
 
-Edge function secret (never commit):
+Edge function secrets (never commit):
 ```bash
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<value>
+supabase secrets set SERVICE_ROLE_KEY=<value> PADEL_API_TOKEN=<value> DISCOUNT_WEBHOOK_SECRET=<value>
 ```
 
 ---
@@ -190,4 +219,9 @@ supabase secrets set SUPABASE_SERVICE_ROLE_KEY=<value>
 - **Font**: Obviously (brand font) skipped for now — using system font. To add later: buy web license from OH no Type, self-host in `public/fonts/`, add `@font-face` to `src/index.css`, or use Adobe Fonts kit via `<link>` in `public/index.html` (requires Creative Cloud subscription). Adobe CSS names are `obviously` and `obviously-narrow`.
 - **Email rate limits**: Supabase free tier has strict invite email limits. Fix: set up custom SMTP via Resend in Supabase dashboard → Authentication → SMTP settings.
 - **Supabase redirect URLs**: Production GitHub Pages URL needs to be added in Supabase Auth settings (Site URL + Redirect URLs) for login to work on prod.
-- **Deno VS Code errors** in `supabase/functions/invite-athlete/index.ts` are cosmetic — install the `denoland.vscode-deno` VS Code extension to resolve.
+- **Routing on GitHub Pages**: `BrowserRouter` has no basename but the site is served from the `/bas3line-app` subpath. Check this works on prod (Phase 1).
+- **LTA scraper** is fragile (HTML parsing). It has no official API to fall back on. Log failures and show "last updated" so stale data is visible.
+- **Dead code**: `addManualRanking` and `deleteRanking` in `src/lib/queries.ts` are unused.
+- **WooCommerce snippet**: the WordPress code that calls `record-discount-sale` is not in this repo. Commit it (roadmap Phase 4).
+- **Stale plan files** in the repo root (`right-now-i-want-fluttering-perlis.md` uses old `coupon_*` names; `hi-i-have-an-linear-shamir.md` names old athlete components).
+- **Deno VS Code errors** in `supabase/functions/*/index.ts` are cosmetic — install the `denoland.vscode-deno` VS Code extension to resolve.
