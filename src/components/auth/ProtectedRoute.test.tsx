@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
+import { useAuth } from '../../hooks/useAuth';
 
 jest.mock('../../lib/supabase', () => ({
   supabase: {
@@ -11,7 +12,6 @@ jest.mock('../../lib/supabase', () => ({
 }));
 jest.mock('../../hooks/useAuth');
 
-import { useAuth } from '../../hooks/useAuth';
 const mockUseAuth = useAuth as jest.Mock;
 
 function renderProtectedRoute(requiredRole: 'sponsor', initialPath = '/protected') {

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { LoginPage } from './LoginPage';
 
@@ -60,7 +60,7 @@ describe('LoginPage', () => {
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
-    await waitFor(() => expect(screen.getByText('Sponsor dashboard')).toBeInTheDocument());
+    expect(await screen.findByText('Sponsor dashboard')).toBeInTheDocument();
   });
 
   it('shows an error message on invalid credentials', async () => {
@@ -74,7 +74,7 @@ describe('LoginPage', () => {
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'wrong' } });
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
-    await waitFor(() => expect(screen.getByText(/invalid login credentials/i)).toBeInTheDocument());
+    expect(await screen.findByText(/invalid login credentials/i)).toBeInTheDocument();
     expect(screen.queryByText('Sponsor dashboard')).not.toBeInTheDocument();
   });
 
@@ -86,6 +86,6 @@ describe('LoginPage', () => {
 
     renderWithRoutes();
 
-    await waitFor(() => expect(screen.getByText('Sponsor dashboard')).toBeInTheDocument());
+    expect(await screen.findByText('Sponsor dashboard')).toBeInTheDocument();
   });
 });
