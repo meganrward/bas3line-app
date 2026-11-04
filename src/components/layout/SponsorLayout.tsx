@@ -1,14 +1,12 @@
-import { useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { supabase } from "../../lib/supabase";
-import { Logo } from "../shared/Logo";
+import { useState } from 'react';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
+import { Logo } from '../shared/Logo';
 
-const navItems = [
-  { to: "/sponsor/ambassadors", label: "Ambassadors" },
-];
+const navItems = [{ to: '/sponsor/ambassadors', label: 'Ambassadors' }];
 
 function navLinkClass({ isActive }: { isActive: boolean }) {
-  return isActive ? "nav-link-active" : "nav-link";
+  return isActive ? 'nav-link-active' : 'nav-link';
 }
 
 export function SponsorLayout() {
@@ -17,7 +15,7 @@ export function SponsorLayout() {
 
   async function handleSignOut() {
     await supabase.auth.signOut();
-    navigate("/login");
+    navigate('/login');
   }
 
   return (
@@ -50,12 +48,7 @@ export function SponsorLayout() {
               aria-label="Toggle menu"
             >
               {menuOpen ? (
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -64,12 +57,7 @@ export function SponsorLayout() {
                   />
                 </svg>
               ) : (
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"

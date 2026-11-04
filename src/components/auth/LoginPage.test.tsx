@@ -21,7 +21,7 @@ function renderWithRoutes() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/sponsor" element={<div>Sponsor dashboard</div>} />
       </Routes>
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 
@@ -60,9 +60,7 @@ describe('LoginPage', () => {
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
-    await waitFor(() =>
-      expect(screen.getByText('Sponsor dashboard')).toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.getByText('Sponsor dashboard')).toBeInTheDocument());
   });
 
   it('shows an error message on invalid credentials', async () => {
@@ -76,9 +74,7 @@ describe('LoginPage', () => {
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'wrong' } });
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
-    await waitFor(() =>
-      expect(screen.getByText(/invalid login credentials/i)).toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.getByText(/invalid login credentials/i)).toBeInTheDocument());
     expect(screen.queryByText('Sponsor dashboard')).not.toBeInTheDocument();
   });
 
@@ -90,8 +86,6 @@ describe('LoginPage', () => {
 
     renderWithRoutes();
 
-    await waitFor(() =>
-      expect(screen.getByText('Sponsor dashboard')).toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.getByText('Sponsor dashboard')).toBeInTheDocument());
   });
 });

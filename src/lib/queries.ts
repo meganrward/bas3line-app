@@ -1,20 +1,22 @@
-import { supabase } from "./supabase";
-import { supabaseMonitor } from "./supabaseMonitor";
+import { supabase } from './supabase';
+import { supabaseMonitor } from './supabaseMonitor';
 import {
   AmbassadorListItem,
   AmbassadorProfileData,
   InstagramAnalyticsData,
   RankingsData,
-} from "./queryTypes";
-import { InstagramPost, DailyMetric, AmbassadorRanking, DiscountCodeSale } from "./types";
+} from './queryTypes';
+import { InstagramPost, DailyMetric, AmbassadorRanking, DiscountCodeSale } from './types';
 
 // ─── Sponsor queries ───────────────────────────────────────────────────────────
 
 export async function loadAmbassadors(): Promise<AmbassadorListItem[]> {
   const result = await supabase
-    .from("ambassador_profiles")
-    .select("id, gender, instagram_handle, fip_player_slug, lta_membership_number, lta_player_id, profiles(full_name)")
-    .order("id");
+    .from('ambassador_profiles')
+    .select(
+      'id, gender, instagram_handle, fip_player_slug, lta_membership_number, lta_player_id, profiles(full_name)',
+    )
+    .order('id');
 
   return ((result.data ?? []) as any[]).map((row) => ({
     id: row.id,
@@ -31,9 +33,11 @@ export async function loadAmbassadorProfile(
   ambassadorId: string,
 ): Promise<AmbassadorProfileData | null> {
   const result = await (supabase as any)
-    .from("ambassador_profiles")
-    .select("gender, bio, instagram_handle, instagram_user_id, fip_player_slug, lta_membership_number, lta_player_id, discount_code, commission_rate, profiles(full_name)")
-    .eq("id", ambassadorId)
+    .from('ambassador_profiles')
+    .select(
+      'gender, bio, instagram_handle, instagram_user_id, fip_player_slug, lta_membership_number, lta_player_id, discount_code, commission_rate, profiles(full_name)',
+    )
+    .eq('id', ambassadorId)
     .single();
 
   if (result.error || !result.data) return null;
@@ -55,9 +59,9 @@ export async function loadAmbassadorProfile(
 
 export async function getAmbassadorIds(sponsorId: string): Promise<string[]> {
   const result = await supabase
-    .from("ambassador_profiles")
-    .select("id")
-    .eq("sponsor_id", sponsorId);
+    .from('ambassador_profiles')
+    .select('id')
+    .eq('sponsor_id', sponsorId);
   return ((result.data ?? []) as any[]).map((row) => row.id);
 }
 
@@ -65,36 +69,33 @@ export async function getAmbassadorIds(sponsorId: string): Promise<string[]> {
 
 export async function loadRankings(ambassadorId: string): Promise<RankingsData> {
   const result = await supabase
-    .from("ambassador_rankings")
-    .select("*")
-    .eq("ambassador_id", ambassadorId)
-    .order("fetched_at", { ascending: false });
+    .from('ambassador_rankings')
+    .select('*')
+    .eq('ambassador_id', ambassadorId)
+    .order('fetched_at', { ascending: false });
 
   const rows = (result.data ?? []) as AmbassadorRanking[];
   return {
-    fip: rows.filter((r) => r.source === "fip"),
-    lta: rows.filter((r) => r.source === "lta"),
+    fip: rows.filter((r) => r.source === 'fip'),
+    lta: rows.filter((r) => r.source === 'lta'),
   };
 }
 
 export async function refreshFipRanking(
   ambassadorId: string,
   fipPlayerSlug: string,
-): Promise<RankingsData["fip"]> {
+): Promise<RankingsData['fip']> {
   const session = (await supabase.auth.getSession()).data.session;
   if (!session) return [];
 
-  const res = await fetch(
-    `${process.env.REACT_APP_SUPABASE_URL}/functions/v1/get-fip-ranking`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ slug: fipPlayerSlug, ambassador_id: ambassadorId }),
+  const res = await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/get-fip-ranking`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
     },
-  );
+    body: JSON.stringify({ slug: fipPlayerSlug, ambassador_id: ambassadorId }),
+  });
 
   if (!res.ok) return [];
   const json = await res.json();
@@ -104,21 +105,18 @@ export async function refreshFipRanking(
 export async function refreshLtaRanking(
   ambassadorId: string,
   ltaPlayerId: string,
-): Promise<RankingsData["lta"]> {
+): Promise<RankingsData['lta']> {
   const session = (await supabase.auth.getSession()).data.session;
   if (!session) return [];
 
-  const res = await fetch(
-    `${process.env.REACT_APP_SUPABASE_URL}/functions/v1/get-lta-ranking`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ player_id: ltaPlayerId, ambassador_id: ambassadorId }),
+  const res = await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/get-lta-ranking`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${session.access_token}`,
     },
-  );
+    body: JSON.stringify({ player_id: ltaPlayerId, ambassador_id: ambassadorId }),
+  });
 
   if (!res.ok) return [];
   const json = await res.json();
@@ -136,16 +134,16 @@ export async function loadInstagramAnalytics(
 
   const [postsResult, metricsResult] = await Promise.all([
     supabaseMonitor
-      .from("posts")
-      .select("*")
-      .eq("ambassador_id", instagramUserId)
-      .order("timestamp", { ascending: false })
+      .from('posts')
+      .select('*')
+      .eq('ambassador_id', instagramUserId)
+      .order('timestamp', { ascending: false })
       .limit(90),
     supabaseMonitor
-      .from("daily_metrics")
-      .select("*")
-      .eq("ambassador_id", instagramUserId)
-      .order("date", { ascending: false })
+      .from('daily_metrics')
+      .select('*')
+      .eq('ambassador_id', instagramUserId)
+      .order('date', { ascending: false })
       .limit(90),
   ]);
 
@@ -157,38 +155,35 @@ export async function loadInstagramAnalytics(
 
 export async function addManualRanking(
   ambassadorId: string,
-  source: "lta",
+  source: 'lta',
   category: string,
   rank: number,
-): Promise<{ data: import("./types").AmbassadorRanking | null; error: string | null }> {
+): Promise<{ data: import('./types').AmbassadorRanking | null; error: string | null }> {
   const { data, error } = await (supabase as any)
-    .from("ambassador_rankings")
+    .from('ambassador_rankings')
     .upsert(
       { ambassador_id: ambassadorId, source, category, rank },
-      { onConflict: "ambassador_id,source,category" },
+      { onConflict: 'ambassador_id,source,category' },
     )
     .select()
     .single();
   return {
-    data: data as import("./types").AmbassadorRanking | null,
+    data: data as import('./types').AmbassadorRanking | null,
     error: error?.message ?? null,
   };
 }
 
 export async function deleteRanking(rankingId: string): Promise<{ error: string | null }> {
-  const { error } = await supabase
-    .from("ambassador_rankings")
-    .delete()
-    .eq("id", rankingId);
+  const { error } = await supabase.from('ambassador_rankings').delete().eq('id', rankingId);
   return { error: error?.message ?? null };
 }
 
 export async function fetchDiscountCodeSales(ambassadorId: string): Promise<DiscountCodeSale[]> {
   const { data } = await supabase
-    .from("discount_code_sales")
-    .select("*")
-    .eq("ambassador_id", ambassadorId)
-    .order("sale_date", { ascending: false });
+    .from('discount_code_sales')
+    .select('*')
+    .eq('ambassador_id', ambassadorId)
+    .order('sale_date', { ascending: false });
   return (data ?? []) as DiscountCodeSale[];
 }
 
@@ -207,21 +202,19 @@ export async function updateAmbassadorProfile(
   },
 ): Promise<{ error: string | null }> {
   const { error } = await (supabase as any)
-    .from("ambassador_profiles")
+    .from('ambassador_profiles')
     .update(fields)
-    .eq("id", ambassadorId);
+    .eq('id', ambassadorId);
   return { error: error?.message ?? null };
 }
 
 // ─── Ambassador-side queries ───────────────────────────────────────────────────
 
-export async function loadAmbassadorSponsorId(
-  userId: string,
-): Promise<string | null> {
+export async function loadAmbassadorSponsorId(userId: string): Promise<string | null> {
   const { data } = await supabase
-    .from("ambassador_profiles")
-    .select("sponsor_id")
-    .eq("id", userId)
+    .from('ambassador_profiles')
+    .select('sponsor_id')
+    .eq('id', userId)
     .single();
   return (data as { sponsor_id: string } | null)?.sponsor_id ?? null;
 }

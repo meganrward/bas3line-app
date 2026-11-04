@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "../../lib/supabase";
-import { Logo } from "../shared/Logo";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
+import { Logo } from '../shared/Logo';
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -16,7 +16,7 @@ export function LoginPage() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        navigate("/sponsor", { replace: true });
+        navigate('/sponsor', { replace: true });
       } else {
         setCheckingSession(false);
       }
@@ -40,7 +40,7 @@ export function LoginPage() {
       return;
     }
 
-    navigate("/sponsor", { replace: true });
+    navigate('/sponsor', { replace: true });
   }
 
   if (checkingSession) {
@@ -96,7 +96,7 @@ export function LoginPage() {
             disabled={submitting}
             className="btn-primary w-full flex justify-center"
           >
-            {submitting ? "Signing in…" : "Sign in"}
+            {submitting ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
       </div>

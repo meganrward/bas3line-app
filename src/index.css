@@ -3,12 +3,15 @@
 @tailwind utilities;
 
 body {
-  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 /* ── Component classes ────────────────────────────────────────────────────── */
 @layer components {
-
   /* Buttons */
   .btn-primary {
     @apply px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-brand-blue hover:bg-brand-navy disabled:opacity-50 disabled:cursor-not-allowed transition-colors;
@@ -57,9 +60,15 @@ body {
   .badge-brand {
     @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-brand-blue/10 text-brand-blue;
   }
-  .status-pending  { @apply badge bg-yellow-50 text-yellow-700; }
-  .status-approved { @apply badge bg-green-50 text-green-700; }
-  .status-rejected { @apply badge bg-red-50 text-red-600; }
+  .status-pending {
+    @apply badge bg-yellow-50 text-yellow-700;
+  }
+  .status-approved {
+    @apply badge bg-green-50 text-green-700;
+  }
+  .status-rejected {
+    @apply badge bg-red-50 text-red-600;
+  }
 
   /* Alerts */
   .alert-error {

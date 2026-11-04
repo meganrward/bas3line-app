@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { loadAmbassadors } from "../../lib/queries";
-import { AmbassadorListItem } from "../../lib/queryTypes";
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { loadAmbassadors } from '../../lib/queries';
+import { AmbassadorListItem } from '../../lib/queryTypes';
 
 export function AmbassadorsList() {
   const [ambassadors, setAmbassadors] = useState<AmbassadorListItem[]>([]);
@@ -28,7 +28,7 @@ export function AmbassadorsList() {
 
       {ambassadors.length === 0 ? (
         <div className="card p-8 text-center text-gray-500">
-          No ambassadors yet.{" "}
+          No ambassadors yet.{' '}
           <Link to="/sponsor/ambassadors/new" className="text-brand-blue underline">
             Add your first one.
           </Link>
@@ -47,18 +47,17 @@ export function AmbassadorsList() {
             </thead>
             <tbody>
               {ambassadors.map((a) => (
-                <tr key={a.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 font-medium text-gray-900">
-                    {a.full_name ?? "—"}
-                  </td>
+                <tr
+                  key={a.id}
+                  className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors"
+                >
+                  <td className="px-4 py-3 font-medium text-gray-900">{a.full_name ?? '—'}</td>
                   <td className="px-4 py-3 text-gray-500">
-                    {a.instagram_handle ? `@${a.instagram_handle}` : "—"}
+                    {a.instagram_handle ? `@${a.instagram_handle}` : '—'}
                   </td>
-                  <td className="px-4 py-3 text-gray-500">
-                    {a.fip_player_slug ?? "—"}
-                  </td>
+                  <td className="px-4 py-3 text-gray-500">{a.fip_player_slug ?? '—'}</td>
                   <td className="px-4 py-3 text-gray-500 font-mono text-xs">
-                    {a.lta_player_id ? `${a.lta_player_id.slice(0, 8)}…` : "—"}
+                    {a.lta_player_id ? `${a.lta_player_id.slice(0, 8)}…` : '—'}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Link

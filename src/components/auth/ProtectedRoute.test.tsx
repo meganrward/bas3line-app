@@ -2,7 +2,13 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 
-jest.mock('../../lib/supabase', () => ({ supabase: { auth: { onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })) } } }));
+jest.mock('../../lib/supabase', () => ({
+  supabase: {
+    auth: {
+      onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
+    },
+  },
+}));
 jest.mock('../../hooks/useAuth');
 
 import { useAuth } from '../../hooks/useAuth';
@@ -23,7 +29,7 @@ function renderProtectedRoute(requiredRole: 'sponsor', initialPath = '/protected
           }
         />
       </Routes>
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 

@@ -6,7 +6,7 @@ import { Profile, StaffRole } from '../lib/types';
 interface AuthState {
   user: User | null;
   profile: Profile | null;
-  sponsorId: string | null;   // non-null for sponsor-role users
+  sponsorId: string | null; // non-null for sponsor-role users
   staffRole: StaffRole | null; // non-null for sponsor-role users
   loading: boolean;
 }
@@ -19,7 +19,9 @@ export function useAuth(): AuthState {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
@@ -37,7 +39,11 @@ export function useAuth(): AuthState {
   async function fetchProfile(userId: string) {
     const [profileResult, staffResult] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', userId).single(),
-      supabase.from('sponsor_staff').select('sponsor_id, staff_role').eq('user_id', userId).maybeSingle(),
+      supabase
+        .from('sponsor_staff')
+        .select('sponsor_id, staff_role')
+        .eq('user_id', userId)
+        .maybeSingle(),
     ]);
 
     setProfile(profileResult.data as Profile | null);

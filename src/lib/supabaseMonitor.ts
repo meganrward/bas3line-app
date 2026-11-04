@@ -7,6 +7,4 @@ const monitorUrl = process.env.REACT_APP_MONITOR_SUPABASE_URL;
 const monitorAnonKey = process.env.REACT_APP_MONITOR_SUPABASE_ANON_KEY;
 
 export const supabaseMonitor: SupabaseClient | null =
-  monitorUrl && monitorAnonKey
-    ? createClient(monitorUrl, monitorAnonKey)
-    : null;
+  monitorUrl && monitorAnonKey ? createClient(monitorUrl, monitorAnonKey) : null;

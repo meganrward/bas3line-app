@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "../../lib/supabase";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
 
 export function AddAmbassadorForm() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [gender, setGender] = useState<"male" | "female" | "">("");
-  const [fipSlug, setFipSlug] = useState("");
-  const [ltaMembershipNumber, setLtaMembershipNumber] = useState("");
-  const [ltaPlayerId, setLtaPlayerId] = useState("");
+  const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [gender, setGender] = useState<'male' | 'female' | ''>('');
+  const [fipSlug, setFipSlug] = useState('');
+  const [ltaMembershipNumber, setLtaMembershipNumber] = useState('');
+  const [ltaPlayerId, setLtaPlayerId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,33 +20,30 @@ export function AddAmbassadorForm() {
 
     const session = (await supabase.auth.getSession()).data.session;
     if (!session) {
-      setError("Not authenticated.");
+      setError('Not authenticated.');
       setLoading(false);
       return;
     }
 
-    const res = await fetch(
-      `${process.env.REACT_APP_SUPABASE_URL}/functions/v1/invite-athlete`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          email,
-          full_name: fullName,
-          gender: gender || undefined,
-          fip_player_slug: fipSlug.trim() || undefined,
-          lta_membership_number: ltaMembershipNumber.trim() || undefined,
-          lta_player_id: ltaPlayerId.trim() || undefined,
-        }),
+    const res = await fetch(`${process.env.REACT_APP_SUPABASE_URL}/functions/v1/invite-athlete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
       },
-    );
+      body: JSON.stringify({
+        email,
+        full_name: fullName,
+        gender: gender || undefined,
+        fip_player_slug: fipSlug.trim() || undefined,
+        lta_membership_number: ltaMembershipNumber.trim() || undefined,
+        lta_player_id: ltaPlayerId.trim() || undefined,
+      }),
+    });
 
     const json = await res.json();
     if (!res.ok) {
-      setError(json.error ?? "Invite failed.");
+      setError(json.error ?? 'Invite failed.');
       setLoading(false);
       return;
     }
@@ -90,7 +87,7 @@ export function AddAmbassadorForm() {
             <select
               className="input"
               value={gender}
-              onChange={(e) => setGender(e.target.value as "male" | "female" | "")}
+              onChange={(e) => setGender(e.target.value as 'male' | 'female' | '')}
             >
               <option value="">Not specified</option>
               <option value="female">Female</option>
@@ -119,9 +116,7 @@ export function AddAmbassadorForm() {
               onChange={(e) => setLtaMembershipNumber(e.target.value)}
               placeholder="118985501"
             />
-            <p className="text-xs text-gray-400 mt-1">
-              The number on their LTA membership card
-            </p>
+            <p className="text-xs text-gray-400 mt-1">The number on their LTA membership card</p>
           </div>
 
           <div>
@@ -139,12 +134,12 @@ export function AddAmbassadorForm() {
 
           <div className="flex gap-3 pt-2">
             <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? "Sending invite…" : "Send invite"}
+              {loading ? 'Sending invite…' : 'Send invite'}
             </button>
             <button
               type="button"
               className="btn-secondary"
-              onClick={() => navigate("/sponsor/ambassadors")}
+              onClick={() => navigate('/sponsor/ambassadors')}
             >
               Cancel
             </button>
