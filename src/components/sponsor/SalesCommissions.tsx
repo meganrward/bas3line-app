@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import { fetchDiscountCodeSales } from "../../lib/queries";
-import { DiscountCodeSale } from "../../lib/types";
+import { useEffect, useState } from 'react';
+import { fetchDiscountCodeSales } from '../../lib/queries';
+import { DiscountCodeSale } from '../../lib/types';
 
-export function SalesCommissions({ ambassadorId }: { ambassadorId: string }) {
+export function SalesCommissions({ ambassadorId }: Readonly<{ ambassadorId: string }>) {
   const [sales, setSales] = useState<DiscountCodeSale[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,8 +34,8 @@ export function SalesCommissions({ ambassadorId }: { ambassadorId: string }) {
         </svg>
         <h2 className="heading-section">Sales &amp; commissions</h2>
         <p className="text-sm text-gray-400 max-w-sm">
-          No sales recorded yet. Make sure the ambassador's discount code is set
-          and the WordPress snippet is active.
+          No sales recorded yet. Make sure the ambassador's discount code is set and the WordPress
+          snippet is active.
         </p>
       </div>
     );
@@ -76,7 +76,7 @@ export function SalesCommissions({ ambassadorId }: { ambassadorId: string }) {
   );
 }
 
-function SummaryCard({ label, value }: { label: string; value: string }) {
+function SummaryCard({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
     <div className="card p-4">
       <p className="text-xs text-gray-400 mb-1">{label}</p>
@@ -85,11 +85,11 @@ function SummaryCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SaleRow({ sale }: { sale: DiscountCodeSale }) {
-  const date = new Date(sale.sale_date).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
+function SaleRow({ sale }: Readonly<{ sale: DiscountCodeSale }>) {
+  const date = new Date(sale.sale_date).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
   });
 
   return (
@@ -97,14 +97,16 @@ function SaleRow({ sale }: { sale: DiscountCodeSale }) {
       <td className="px-4 py-2.5 text-gray-500">{date}</td>
       <td className="px-4 py-2.5 text-gray-500 font-mono text-xs">{sale.order_id}</td>
       <td className="px-4 py-2.5 text-right text-gray-700">{formatGBP(sale.order_total)}</td>
-      <td className="px-4 py-2.5 text-right font-medium text-gray-900">{formatGBP(sale.commission_amount)}</td>
+      <td className="px-4 py-2.5 text-right font-medium text-gray-900">
+        {formatGBP(sale.commission_amount)}
+      </td>
     </tr>
   );
 }
 
 function formatGBP(amount: number): string {
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP',
   }).format(amount);
 }

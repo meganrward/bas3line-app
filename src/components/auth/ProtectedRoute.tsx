@@ -1,13 +1,13 @@
-import { Navigate } from "react-router-dom";
-import { useAuth } from "../../hooks/useAuth";
-import { UserRole } from "../../lib/types";
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import { UserRole } from '../../lib/types';
 
 interface Props {
   role: UserRole;
   children: React.ReactNode;
 }
 
-export function ProtectedRoute({ role, children }: Props) {
+export function ProtectedRoute({ role, children }: Readonly<Props>) {
   const { user, profile, loading } = useAuth();
 
   if (loading) {
