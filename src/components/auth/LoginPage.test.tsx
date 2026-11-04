@@ -19,7 +19,7 @@ function renderWithRoutes() {
     <MemoryRouter initialEntries={['/login']}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/sponsor" element={<div>Sponsor dashboard</div>} />
+        <Route path="/" element={<div>Home page</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -49,7 +49,7 @@ describe('LoginPage', () => {
     expect(screen.queryByLabelText(/email/i)).not.toBeInTheDocument();
   });
 
-  it('navigates to /sponsor after login', async () => {
+  it('navigates to the landing route after login', async () => {
     mockSignInWithPassword.mockResolvedValue({
       data: { user: { id: 'sponsor-123' } },
       error: null,
@@ -60,7 +60,7 @@ describe('LoginPage', () => {
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
-    expect(await screen.findByText('Sponsor dashboard')).toBeInTheDocument();
+    expect(await screen.findByText('Home page')).toBeInTheDocument();
   });
 
   it('shows an error message on invalid credentials', async () => {
@@ -75,10 +75,10 @@ describe('LoginPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
     expect(await screen.findByText(/invalid login credentials/i)).toBeInTheDocument();
-    expect(screen.queryByText('Sponsor dashboard')).not.toBeInTheDocument();
+    expect(screen.queryByText('Home page')).not.toBeInTheDocument();
   });
 
-  it('auto-navigates to /sponsor when an existing session is detected', async () => {
+  it('auto-navigates to the landing route when an existing session is detected', async () => {
     mockOnAuthStateChange.mockImplementation((callback: any) => {
       callback('INITIAL_SESSION', { user: { id: 'sponsor-123' } });
       return { data: { subscription: { unsubscribe: jest.fn() } } };
@@ -86,6 +86,6 @@ describe('LoginPage', () => {
 
     renderWithRoutes();
 
-    expect(await screen.findByText('Sponsor dashboard')).toBeInTheDocument();
+    expect(await screen.findByText('Home page')).toBeInTheDocument();
   });
 });

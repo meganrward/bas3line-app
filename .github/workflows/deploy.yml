@@ -43,6 +43,10 @@ jobs:
           REACT_APP_MONITOR_SUPABASE_ANON_KEY: ${{ secrets.REACT_APP_MONITOR_SUPABASE_ANON_KEY }}
         run: npm run build
 
+      # GitHub Pages has no SPA fallback: serve the app for deep links and refreshes
+      - name: Add SPA fallback
+        run: cp build/index.html build/404.html
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:

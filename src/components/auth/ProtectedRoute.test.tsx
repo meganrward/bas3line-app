@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 import { useAuth } from '../../hooks/useAuth';
+import { UserRole } from '../../lib/types';
 
 jest.mock('../../lib/supabase', () => ({
   supabase: {
@@ -14,12 +15,12 @@ jest.mock('../../hooks/useAuth');
 
 const mockUseAuth = useAuth as jest.Mock;
 
-function renderProtectedRoute(requiredRole: 'sponsor', initialPath = '/protected') {
+function renderProtectedRoute(requiredRole: UserRole, initialPath = '/protected') {
   return render(
     <MemoryRouter initialEntries={[initialPath]}>
       <Routes>
         <Route path="/login" element={<div>Login page</div>} />
-        <Route path="/sponsor" element={<div>Sponsor dashboard</div>} />
+        <Route path="/" element={<div>Home page</div>} />
         <Route
           path="/protected"
           element={
@@ -57,13 +58,34 @@ describe('ProtectedRoute', () => {
     expect(screen.getByText('Protected content')).toBeInTheDocument();
   });
 
-  it('redirects an ambassador to /login when they try to access the sponsor route', () => {
+  it('renders children for an ambassador on the ambassador route', () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'ambassador-456' },
+      profile: { role: 'ambassador' },
+      loading: false,
+    });
+    renderProtectedRoute('ambassador');
+    expect(screen.getByText('Protected content')).toBeInTheDocument();
+  });
+
+  it('sends an ambassador to the landing route when they try to access the sponsor route', () => {
     mockUseAuth.mockReturnValue({
       user: { id: 'ambassador-456' },
       profile: { role: 'ambassador' },
       loading: false,
     });
     renderProtectedRoute('sponsor');
-    expect(screen.getByText('Login page')).toBeInTheDocument();
+    expect(screen.getByText('Home page')).toBeInTheDocument();
+    expect(screen.queryByText('Login page')).not.toBeInTheDocument();
+  });
+
+  it('sends a sponsor to the landing route when they try to access the ambassador route', () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'sponsor-123' },
+      profile: { role: 'sponsor' },
+      loading: false,
+    });
+    renderProtectedRoute('ambassador');
+    expect(screen.getByText('Home page')).toBeInTheDocument();
   });
 });

@@ -128,6 +128,10 @@ discount_code_sales   ambassador_id, discount_code, order_id (unique), order_tot
 - Instagram `posts` live in the separate monitor project, not this database. (The old orphaned `public.posts` table is dropped by `20260705000000_drop_orphaned_posts_table.sql`.)
 - Staff roles live in `sponsor_staff.staff_role`; the old `'admin'|'staff'` values are gone.
 
+### Ambassador self-edit guard
+
+Ambassadors can update their own `ambassador_profiles` row, but the `guard_ambassador_profile_update` trigger only lets them change the columns in its `editable_columns` allow-list (currently `bio`, `training_location`). Everything else (`commission_rate`, `discount_code`, IDs, `sponsor_id`) is sponsor-only. Sponsors, staff and service-role code are unrestricted. To let ambassadors edit another column, redefine that function in a new migration and add a pgTAP test. Tests live in `supabase/tests/database/` and run with `supabase test db`.
+
 ### RLS / auth helpers
 
 - `current_user_role()` — returns `profiles.role` for the current user
@@ -193,6 +197,7 @@ Before work is done it must pass Prettier, ESLint and Sonar (`eslint-plugin-sona
 supabase start               # local Supabase (Docker) — applies migrations + seed.sql
 npm start                    # dev server on localhost:3000 — uses LOCAL Supabase
 supabase db reset            # wipe local DB, re-run migrations + seed
+supabase test db             # run pgTAP RLS tests (needs the seeded local DB)
 supabase functions serve --env-file supabase/.env.local   # run edge functions locally (optional)
 supabase db push             # apply migrations to REMOTE (prod) — only when ready to ship
 supabase functions deploy <name>   # deploy an edge function to remote

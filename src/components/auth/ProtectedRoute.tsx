@@ -19,8 +19,9 @@ export function ProtectedRoute({ role, children }: Readonly<Props>) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
+  // Wrong role: "/" sends them to their own home rather than back to login.
   if (profile?.role !== role) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

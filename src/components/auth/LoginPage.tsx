@@ -16,7 +16,7 @@ export function LoginPage() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        navigate('/sponsor', { replace: true });
+        navigate('/', { replace: true });
       } else {
         setCheckingSession(false);
       }
@@ -40,7 +40,7 @@ export function LoginPage() {
       return;
     }
 
-    navigate('/sponsor', { replace: true });
+    navigate('/', { replace: true });
   }
 
   if (checkingSession) {
