@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { parseSalePayload } from "../_shared/sale-payload.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -33,12 +34,7 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  let body: {
-    discount_code: string;
-    order_id: string;
-    order_total: number;
-    sale_date: string;
-  };
+  let body: Record<string, unknown>;
 
   try {
     body = await req.json();
@@ -49,14 +45,15 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  const { discount_code, order_id, order_total, sale_date } = body;
-
-  if (!discount_code || !order_id || order_total == null || !sale_date) {
-    return new Response(
-      JSON.stringify({ error: "discount_code, order_id, order_total, and sale_date are required" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+  const parsed = parseSalePayload(body);
+  if (!parsed.ok) {
+    return new Response(JSON.stringify({ error: parsed.error }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
+
+  const { discountCode, orderId, orderTotal, saleDate, status } = parsed.payload;
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -67,7 +64,7 @@ Deno.serve(async (req: Request) => {
   const { data: ambassador, error: lookupError } = await supabase
     .from("ambassador_profiles")
     .select("id, commission_rate")
-    .eq("discount_code", discount_code.toLowerCase())
+    .eq("discount_code", discountCode)
     .maybeSingle();
 
   if (lookupError) {
@@ -80,15 +77,37 @@ Deno.serve(async (req: Request) => {
 
   if (!ambassador) {
     return new Response(
-      JSON.stringify({ error: `No ambassador found for discount code "${discount_code}"` }),
+      JSON.stringify({ error: `No ambassador found for discount code "${discountCode}"` }),
       { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 
   const commissionRate = ambassador.commission_rate ?? 10;
-  const commissionAmount = Number(
-    ((order_total * commissionRate) / 100).toFixed(2),
-  );
+  const commissionAmount = Number(((orderTotal * commissionRate) / 100).toFixed(2));
+
+  if (status === "refunded") {
+    // Mark the original sale refunded. Amounts are left as recorded, so the audit
+    // trail shows what was originally earned. Idempotent: re-sending changes nothing.
+    const { data: refundedRows, error: refundError } = await supabase
+      .from("discount_code_sales")
+      .update({ status: "refunded", refunded_at: new Date().toISOString() })
+      .eq("order_id", orderId)
+      .eq("status", "completed")
+      .select("id");
+
+    if (refundError) {
+      console.error("Refund error:", refundError);
+      return new Response(JSON.stringify({ error: "Failed to record refund" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(
+      JSON.stringify({ success: true, refunded: (refundedRows?.length ?? 0) > 0 }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
 
   // order_id is unique, so a retried webhook is ignored rather than duplicated
   const { data: insertedRows, error: insertError } = await supabase
@@ -96,11 +115,11 @@ Deno.serve(async (req: Request) => {
     .upsert(
       {
         ambassador_id: ambassador.id,
-        discount_code: discount_code.toLowerCase(),
-        order_id: String(order_id),
-        order_total: Number(order_total),
+        discount_code: discountCode,
+        order_id: orderId,
+        order_total: orderTotal,
         commission_amount: commissionAmount,
-        sale_date,
+        sale_date: saleDate,
       },
       { onConflict: "order_id", ignoreDuplicates: true },
     )
