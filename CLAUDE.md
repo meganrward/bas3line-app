@@ -147,6 +147,9 @@ payout_requests       ambassador_id, request_type ('cash'|'kit'), amount, note, 
                       cash), snapshotted per request; the ledger debits the commission spent, not the
                       boosted value. A refund after payout can make a balance negative; it
                       offsets future commission, nothing is clawed back.
+kit_items             sponsor_id, name, price, active, sort_order. Sponsor staff manage; ambassadors read
+                      their sponsor's active items. request_payout takes an optional kit item: the request
+                      copies its name/price (kit_item_name/price) and the discount can't exceed the price.
 ```
 
 - Instagram `posts` live in the separate monitor project, not this database. (The old orphaned `public.posts` table is dropped by `20260705000000_drop_orphaned_posts_table.sql`.)

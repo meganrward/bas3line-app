@@ -21,7 +21,7 @@ select throws_ok(
 );
 
 select is(
-  has_function_privilege('anon', 'public.request_payout(text, numeric, text)', 'execute')
+  has_function_privilege('anon', 'public.request_payout(text, numeric, text, uuid)', 'execute')
     or has_function_privilege('anon', 'public.approve_payout(uuid)', 'execute'),
   false,
   'signed-out visitors cannot call the payout functions'

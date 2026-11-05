@@ -85,6 +85,17 @@ begin
      now() - interval '5 days', 'refunded', now() - interval '4 days')
   on conflict do nothing;
 
+  -- ── Example kit (for demos; sponsor staff edit the real list) ───────────────
+  insert into public.kit_items (sponsor_id, name, price, sort_order)
+  select v_sponsor_id, item.name, item.price, item.sort_order
+    from (values
+      ('T-shirt', 20.00, 1),
+      ('Shorts',  30.00, 2),
+      ('Hoodie',  45.00, 3),
+      ('Cap',     15.00, 4)
+    ) as item (name, price, sort_order)
+  where not exists (select 1 from public.kit_items);
+
   -- ── Padel clubs, team roles and home clubs ──────────────────────────────────
   insert into public.padel_clubs (name, town, region) values
     ('Padel Club London', 'London', 'Greater London'),
