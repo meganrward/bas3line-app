@@ -75,6 +75,28 @@ export interface DiscountCodeSale {
   created_at: string;
 }
 
+export type PayoutType = 'cash' | 'kit';
+export type PayoutStatus = 'pending' | 'approved' | 'paid' | 'rejected';
+
+export interface PayoutRequest {
+  id: string;
+  request_type: PayoutType;
+  amount: number;
+  kit_credit_value: number | null;
+  kit_item_name: string | null;
+  kit_item_price: number | null;
+  note: string | null;
+  status: PayoutStatus;
+  sponsor_note: string | null;
+  created_at: string;
+}
+
+export interface CommissionBalance {
+  totalEarned: number;
+  totalPaidOut: number;
+  balance: number;
+}
+
 export interface AmbassadorRanking {
   id: string;
   ambassador_id: string;

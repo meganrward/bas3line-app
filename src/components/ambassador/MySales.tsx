@@ -3,6 +3,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { fetchDiscountCodeSales } from '../../lib/queries';
 import { DiscountCodeSale } from '../../lib/types';
 import { SalesOverview } from '../shared/SalesOverview';
+import { RedeemCommission } from './RedeemCommission';
 
 export function MySales() {
   const { user } = useAuth();
@@ -28,6 +29,7 @@ export function MySales() {
         sales={sales}
         emptyMessage="No sales yet. When someone buys with your discount code, it shows up here along with your commission."
       />
+      {ambassadorId && <RedeemCommission ambassadorId={ambassadorId} />}
     </div>
   );
 }

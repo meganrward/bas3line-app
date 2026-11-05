@@ -46,7 +46,6 @@ export function App() {
           <Route path="progress" element={<ComingSoon title="Your Progress" />} />
           <Route path="sales" element={<MySales />} />
           <Route path="marketplace" element={<ComingSoon title="Marketplace" />} />
-          <Route path="cash-or-kit" element={<ComingSoon title="Cash or Kit" />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

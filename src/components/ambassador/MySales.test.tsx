@@ -1,12 +1,23 @@
 import { render, screen } from '@testing-library/react';
 import { MySales } from './MySales';
 import { useAuth } from '../../hooks/useAuth';
-import { fetchDiscountCodeSales } from '../../lib/queries';
+import {
+  fetchAvailableBalance,
+  fetchCommissionBalance,
+  fetchDiscountCodeSales,
+  fetchPayoutRequests,
+} from '../../lib/queries';
 import { DiscountCodeSale } from '../../lib/types';
 
 jest.mock('../../lib/supabase', () => ({ supabase: {} }));
 jest.mock('../../hooks/useAuth');
-jest.mock('../../lib/queries', () => ({ fetchDiscountCodeSales: jest.fn() }));
+jest.mock('../../lib/queries', () => ({
+  fetchDiscountCodeSales: jest.fn(),
+  fetchCommissionBalance: jest.fn(),
+  fetchAvailableBalance: jest.fn(),
+  fetchPayoutRequests: jest.fn(),
+  requestPayout: jest.fn(),
+}));
 
 const mockUseAuth = useAuth as jest.Mock;
 const mockFetchSales = fetchDiscountCodeSales as jest.Mock;
@@ -29,6 +40,13 @@ function buildSale(overrides: Partial<DiscountCodeSale> = {}): DiscountCodeSale 
 
 beforeEach(() => {
   mockUseAuth.mockReturnValue({ user: { id: 'ambassador-1' } });
+  (fetchCommissionBalance as jest.Mock).mockResolvedValue({
+    totalEarned: 10,
+    totalPaidOut: 0,
+    balance: 10,
+  });
+  (fetchAvailableBalance as jest.Mock).mockResolvedValue(10);
+  (fetchPayoutRequests as jest.Mock).mockResolvedValue([]);
 });
 
 it('loads the signed-in ambassador’s own sales', async () => {
@@ -57,4 +75,12 @@ it('leaves refunded sales out of the commission total and marks them', async () 
   expect(screen.getByText('£10.00', { selector: '.stat-value' })).toBeInTheDocument();
   expect(screen.getByText('Refunded')).toBeInTheDocument();
   expect(screen.getByText(/1 refunded sale is not counted/)).toBeInTheDocument();
+});
+
+it('puts Redeem commission at the bottom of the Sales page', async () => {
+  mockFetchSales.mockResolvedValue([buildSale()]);
+  render(<MySales />);
+
+  expect(await screen.findByText('Redeem commission')).toBeInTheDocument();
+  expect(await screen.findByText('Available to redeem')).toBeInTheDocument();
 });

@@ -10,8 +10,11 @@ import {
   InstagramPost,
   DailyMetric,
   AmbassadorRanking,
+  CommissionBalance,
   DiscountCodeSale,
   PadelClub,
+  PayoutRequest,
+  PayoutType,
 } from './types';
 import { NewClubInput, normalizeOptionalText } from './clubs.utils';
 
@@ -239,4 +242,58 @@ export async function loadAmbassadorSponsorId(userId: string): Promise<string | 
     .eq('id', userId)
     .single();
   return (data as { sponsor_id: string } | null)?.sponsor_id ?? null;
+}
+
+// ─── Redeem commission (ambassador) ──────────────────────────────────────────────────
+
+export async function fetchCommissionBalance(ambassadorId: string): Promise<CommissionBalance> {
+  const { data } = await (supabase as any)
+    .from('commission_balance')
+    .select('total_earned, total_paid_out, balance')
+    .eq('ambassador_id', ambassadorId)
+    .maybeSingle();
+
+  return {
+    totalEarned: Number(data?.total_earned ?? 0),
+    totalPaidOut: Number(data?.total_paid_out ?? 0),
+    balance: Number(data?.balance ?? 0),
+  };
+}
+
+// Balance minus requests still waiting for approval: the most they can ask for now.
+export async function fetchAvailableBalance(): Promise<number> {
+  const { data } = await (supabase as any).rpc('my_available_balance');
+  return Number(data ?? 0);
+}
+
+export async function fetchPayoutRequests(ambassadorId: string): Promise<PayoutRequest[]> {
+  const { data } = await (supabase as any)
+    .from('payout_requests')
+    .select(
+      'id, request_type, amount, kit_credit_value, kit_item_name, kit_item_price, note, status, sponsor_note, created_at',
+    )
+    .eq('ambassador_id', ambassadorId)
+    .order('created_at', { ascending: false });
+
+  return ((data ?? []) as any[]).map((row) => ({
+    ...row,
+    amount: Number(row.amount),
+    kit_credit_value: row.kit_credit_value == null ? null : Number(row.kit_credit_value),
+    kit_item_price: row.kit_item_price == null ? null : Number(row.kit_item_price),
+  }));
+}
+
+export async function requestPayout(input: {
+  type: PayoutType;
+  amount: number;
+  note: string | null;
+  kitItemId: string | null;
+}): Promise<{ error: string | null }> {
+  const { error } = await (supabase as any).rpc('request_payout', {
+    p_type: input.type,
+    p_amount: input.amount,
+    p_note: input.note,
+    p_kit_item_id: input.kitItemId,
+  });
+  return { error: error?.message ?? null };
 }

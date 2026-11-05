@@ -6,7 +6,6 @@ const navItems: readonly NavItem[] = [
   { to: '/ambassador/progress', label: 'Progress' },
   { to: '/ambassador/sales', label: 'Sales' },
   { to: '/ambassador/marketplace', label: 'Marketplace' },
-  { to: '/ambassador/cash-or-kit', label: 'Cash or Kit' },
 ];
 
 export function AmbassadorLayout() {

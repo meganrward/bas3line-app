@@ -7,7 +7,7 @@ export interface SalesSummary {
   refundedCount: number;
 }
 
-function roundToPence(amount: number): number {
+export function roundToPence(amount: number): number {
   return Math.round(amount * 100) / 100;
 }
 
