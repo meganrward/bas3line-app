@@ -98,6 +98,19 @@ body {
   }
 
   /* Points balance hero card */
+  .stat-value {
+    @apply text-xl font-semibold text-gray-900;
+  }
+  .card-header {
+    @apply px-4 py-3 border-b border-gray-100;
+  }
+  .table-row {
+    @apply border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors;
+  }
+  .table-cell {
+    @apply px-4 py-2.5 text-gray-600;
+  }
+
   .points-card {
     @apply bg-brand-navy rounded-xl p-6 text-white;
   }

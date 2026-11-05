@@ -15,8 +15,8 @@ Single-sponsor. One sponsor organisation, multiple ambassadors.
 ### Current state vs roadmap
 
 - **Built (sponsor):** ambassador list/add/edit (incl. team role, city/region, home club), FIP + LTA rankings, Instagram analytics tab, sales and commission tab, WooCommerce sales webhook.
-- **Built (ambassador):** role-based login routing, `/ambassador/*` shell, **Your Profile** (details, edit bio / city / home club, rankings with refresh, Instagram connect link).
-- **Not built:** Your Progress, Your Sales, Cash or Kit (commission ledger and payout requests), Marketplace. Those routes are "coming soon" placeholders. Instagram *connection status* needs Phase 3's `get-my-engagement`.
+- **Built (ambassador):** role-based login routing, `/ambassador/*` shell, **Your Profile** (details, edit bio / city / home club, rankings with refresh, Instagram connect link), **Your Sales** (totals, commission and history; refunded sales are shown but not counted).
+- **Not built:** Your Progress, Cash or Kit (commission ledger and payout requests), Marketplace. Those routes are "coming soon" placeholders. Instagram *connection status* needs Phase 3's `get-my-engagement`.
 - **Roadmap phases:** 0 housekeeping/security (done), 1 ambassador shell (done), 2 profile (done, except the nightly ranking refresh), 3 progress, 4 sales, 5 cash or kit, 6 marketplace.
 - The old points/posts/vouchers design was dropped in `20260622000000_pivot_to_ambassadors.sql`. Don't resurrect it.
 
@@ -132,7 +132,7 @@ padel_clubs           id, name, town, county, region, created_by. Our own list (
 ambassador_rankings   ambassador_id, source ('fip'|'lta'), category, rank, points_value, fetched_at
                       unique per (ambassador, source, category); sponsor-only write via service role
 discount_code_sales   ambassador_id, discount_code, order_id (unique), order_total,
-                      commission_amount, sale_date
+                      commission_amount, sale_date, status ('completed'|'refunded'), refunded_at
                       sponsor/staff read all, ambassador reads own, only service_role inserts
 ```
 

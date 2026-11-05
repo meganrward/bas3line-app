@@ -22,3 +22,6 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Deno writes this when running deno check/test; edge functions are deployed by the Supabase CLI
+deno.lock

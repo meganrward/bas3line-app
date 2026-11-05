@@ -60,6 +60,8 @@ export interface PadelClub {
 
 export type ClubSummary = Pick<PadelClub, 'id' | 'name' | 'town'>;
 
+export type SaleStatus = 'completed' | 'refunded';
+
 export interface DiscountCodeSale {
   id: string;
   ambassador_id: string;
@@ -68,6 +70,8 @@ export interface DiscountCodeSale {
   order_total: number;
   commission_amount: number;
   sale_date: string;
+  status: SaleStatus;
+  refunded_at: string | null;
   created_at: string;
 }
 

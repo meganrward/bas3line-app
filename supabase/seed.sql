@@ -76,6 +76,15 @@ begin
     ('00000000-0000-0000-0000-000000000003', 'SAM10',  'DEV-1003', 200.00, 25.00, now() - interval '2 days')
   on conflict do nothing;
 
+  -- A returned order, so the refunded display can be seen locally.
+  insert into public.discount_code_sales (
+    ambassador_id, discount_code, order_id, order_total, commission_amount, sale_date,
+    status, refunded_at
+  ) values
+    ('00000000-0000-0000-0000-000000000002', 'ALEX10', 'DEV-1004', 60.00, 6.00,
+     now() - interval '5 days', 'refunded', now() - interval '4 days')
+  on conflict do nothing;
+
   -- ── Padel clubs, team roles and home clubs ──────────────────────────────────
   insert into public.padel_clubs (name, town, region) values
     ('Padel Club London', 'London', 'Greater London'),
