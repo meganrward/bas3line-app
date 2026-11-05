@@ -1,7 +1,13 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PayoutQueue } from './PayoutQueue';
-import { approvePayout, fetchPayoutQueue, markPayoutPaid, rejectPayout } from '../../lib/queries';
+import {
+  approvePayout,
+  fetchPayoutQueue,
+  markPayoutPaid,
+  rejectPayout,
+  undoPayoutApproval,
+} from '../../lib/queries';
 import { PayoutQueueItem } from '../../lib/types';
 
 jest.mock('../../lib/supabase', () => ({ supabase: {} }));
@@ -10,12 +16,14 @@ jest.mock('../../lib/queries', () => ({
   approvePayout: jest.fn(),
   rejectPayout: jest.fn(),
   markPayoutPaid: jest.fn(),
+  undoPayoutApproval: jest.fn(),
 }));
 
 const mockFetchQueue = fetchPayoutQueue as jest.Mock;
 const mockApprove = approvePayout as jest.Mock;
 const mockReject = rejectPayout as jest.Mock;
 const mockMarkPaid = markPayoutPaid as jest.Mock;
+const mockUndo = undoPayoutApproval as jest.Mock;
 
 function buildItem(overrides: Partial<PayoutQueueItem> = {}): PayoutQueueItem {
   return {
@@ -40,6 +48,7 @@ beforeEach(() => {
   mockApprove.mockResolvedValue({ error: null });
   mockReject.mockResolvedValue({ error: null });
   mockMarkPaid.mockResolvedValue({ error: null });
+  mockUndo.mockResolvedValue({ error: null });
 });
 
 it('shows a friendly message when there are no requests', async () => {
@@ -128,6 +137,36 @@ it('marks an approved request paid', async () => {
   await userEvent.click(await screen.findByRole('button', { name: 'Mark paid' }));
 
   expect(mockMarkPaid).toHaveBeenCalledWith('request-1');
+});
+
+it('undoes an approval and reloads the queue', async () => {
+  mockFetchQueue.mockResolvedValueOnce([buildItem({ status: 'approved' })]).mockResolvedValue([]);
+  render(<PayoutQueue />);
+
+  await userEvent.click(await screen.findByRole('button', { name: 'Undo approval' }));
+
+  expect(mockUndo).toHaveBeenCalledWith('request-1');
+  await waitFor(() => expect(mockFetchQueue).toHaveBeenCalledTimes(2));
+});
+
+it('shows the server error when an approval cannot be undone', async () => {
+  mockFetchQueue.mockResolvedValue([buildItem({ status: 'approved' })]);
+  mockUndo.mockResolvedValue({
+    error: 'Only an approved request can be undone (a paid one is final)',
+  });
+  render(<PayoutQueue />);
+
+  await userEvent.click(await screen.findByRole('button', { name: 'Undo approval' }));
+
+  expect(await screen.findByText(/a paid one is final/)).toBeInTheDocument();
+});
+
+it('offers no undo once a request is paid', async () => {
+  mockFetchQueue.mockResolvedValue([buildItem({ status: 'paid' })]);
+  render(<PayoutQueue />);
+
+  await screen.findByText('Paid');
+  expect(screen.queryByRole('button', { name: 'Undo approval' })).not.toBeInTheDocument();
 });
 
 it('keeps finished requests in the history with no actions', async () => {

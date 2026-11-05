@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { exceedsBalance } from '../../lib/payoutQueue.utils';
-import { approvePayout, markPayoutPaid, rejectPayout } from '../../lib/queries';
+import { approvePayout, markPayoutPaid, rejectPayout, undoPayoutApproval } from '../../lib/queries';
 import { describeRequest, statusClassName, statusLabel } from '../../lib/redeem.utils';
 import { formatGBP, formatSaleDate } from '../../lib/sales.utils';
 import { PayoutQueueItem } from '../../lib/types';
@@ -114,7 +114,7 @@ export function PayoutQueueRow({ item, onChanged }: Readonly<Props>) {
       )}
 
       {item.status === 'approved' && (
-        <div>
+        <div className="flex gap-2">
           <button
             type="button"
             className="btn-primary"
@@ -122,6 +122,14 @@ export function PayoutQueueRow({ item, onChanged }: Readonly<Props>) {
             onClick={() => run(() => markPayoutPaid(item.id))}
           >
             Mark paid
+          </button>
+          <button
+            type="button"
+            className="btn-secondary"
+            disabled={busy}
+            onClick={() => run(() => undoPayoutApproval(item.id))}
+          >
+            Undo approval
           </button>
         </div>
       )}

@@ -349,3 +349,11 @@ export async function markPayoutPaid(requestId: string): Promise<{ error: string
   const { error } = await (supabase as any).rpc('mark_payout_paid', { p_request_id: requestId });
   return { error: error?.message ?? null };
 }
+
+// Puts an approved (not yet paid) request back to pending and gives the commission back.
+export async function undoPayoutApproval(requestId: string): Promise<{ error: string | null }> {
+  const { error } = await (supabase as any).rpc('undo_payout_approval', {
+    p_request_id: requestId,
+  });
+  return { error: error?.message ?? null };
+}

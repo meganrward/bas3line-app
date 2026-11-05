@@ -134,14 +134,15 @@ ambassador_rankings   ambassador_id, source ('fip'|'lta'), category, rank, point
 discount_code_sales   ambassador_id, discount_code, order_id (unique), order_total,
                       commission_amount, sale_date, status ('completed'|'refunded'), refunded_at
                       sponsor/staff read all, ambassador reads own, only service_role inserts
-commission_ledger     ambassador_id, entry_type ('sale_commission'|'refund_reversal'|'cash_payout'|'kit_credit'),
+commission_ledger     ambassador_id, entry_type ('sale_commission'|'refund_reversal'|'cash_payout'|'kit_credit'|'payout_reversal'),
                       amount (signed), sale_id, payout_request_id. Append-only (trigger blocks edit/delete).
                       Written only by triggers on discount_code_sales and by approve_payout; read-only to users.
                       Balance = sum of entries; see the commission_balance view.
 payout_requests       ambassador_id, request_type ('cash'|'kit'), amount, note, status
                       ('pending'|'approved'|'paid'|'rejected'), sponsor_note, reviewed_by/at, paid_at.
                       No direct writes: use request_payout / approve_payout / reject_payout /
-                      mark_payout_paid (security definer). Pending requests are held against the balance
+                      mark_payout_paid / undo_payout_approval (security definer; undo adds a positive
+                      'payout_reversal' ledger entry and returns the request to pending; paid is final). Pending requests are held against the balance
                       (my_available_balance()). Kit is a discount: kit_credit_value = amount x
                       sponsors.kit_credit_multiplier (1.00 now; raise it, e.g. 1.25, to reward kit over
                       cash), snapshotted per request; the ledger debits the commission spent, not the

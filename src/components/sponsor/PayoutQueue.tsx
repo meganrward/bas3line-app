@@ -58,7 +58,7 @@ export function PayoutQueue() {
       />
       <PayoutSection
         title="Approved, to pay"
-        hint="These are approved and already taken off the balance. Mark them paid once you have sent the money."
+        hint="These are approved and already taken off the balance. Mark them paid once you have sent the money, or undo the approval to put one back to waiting and give the commission back."
         emptyMessage="Nothing to pay."
         items={approved}
         onChanged={reload}
