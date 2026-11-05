@@ -164,6 +164,10 @@ Ambassadors can update their own `ambassador_profiles` row, but the `guard_ambas
 
 pg_cron (UTC) calls `get-fip-ranking` / `get-lta-ranking` for every ambassador via `public.refresh_rankings(source)` (`20260710000000_schedule_ranking_refresh.sql`). FIP is polled Monday 08/12/16 plus Tuesday 08; LTA Friday 10:30/12/14/17 plus Saturday 08. FIP is forced past its 24h cache. It needs two Vault secrets on the database, `project_url` and `cron_secret` (same value as the `CRON_SECRET` edge function secret); without them a run does nothing. Only the job owner can run it. To check runs: `select * from cron.job_run_details order by start_time desc limit 10;` and `select id, status_code, created from net._http_response order by created desc limit 10;`. To change the timing, edit the schedules in a new migration with `cron.schedule` (same job name replaces it).
 
+### Who counts as a sponsor (security)
+
+`profiles.role` decides sponsor access (`is_sponsor_or_staff()` accepts `role = 'sponsor'`), so it must never be user-editable. `20260716000000_lock_down_profile_roles.sql` revokes UPDATE on `profiles` except `full_name` / `avatar_url`, and `handle_new_user()` takes the role from `raw_app_meta_data` (service role / dashboard only), never `raw_user_meta_data` (which a person signing up controls). Everyone else is an ambassador. To make a sponsor: create the user, then in the SQL Editor `update public.profiles set role = 'sponsor' where id = '<user id>';` and add a `sponsor_staff` row. Keep "Allow new users to sign up" OFF in the prod Auth settings; ambassadors are invited. `supabase/tests/database/profile_role_lockdown.test.sql` covers this.
+
 ### Table access rules
 
 - The signed-out `anon` role has **no** privileges on public tables (`20260709000000_revoke_anon_table_access.sql`), and new tables don't inherit any. Don't grant to `anon`. A pgTAP test enforces this.

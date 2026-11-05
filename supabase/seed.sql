@@ -22,7 +22,8 @@ begin
   end if;
 
   -- ── Auth users ──────────────────────────────────────────────────────────────
-  -- handle_new_user() creates the matching profiles row from raw_user_meta_data.
+  -- handle_new_user() creates the matching profiles row. The role comes from
+  -- raw_app_meta_data (only the service role can set it), never from user metadata.
   for v_user in
     select * from (values
       ('00000000-0000-0000-0000-000000000001'::uuid, 'sponsor@bas3line.test',     'sponsor',    'Dev Sponsor'),
@@ -37,8 +38,8 @@ begin
     ) values (
       '00000000-0000-0000-0000-000000000000', v_user.id, 'authenticated', 'authenticated',
       v_user.email, crypt('password123', gen_salt('bf')), now(),
-      '{"provider":"email","providers":["email"]}',
-      jsonb_build_object('role', v_user.role, 'full_name', v_user.full_name),
+      jsonb_build_object('provider', 'email', 'providers', jsonb_build_array('email'), 'role', v_user.role),
+      jsonb_build_object('full_name', v_user.full_name),
       now(), now(), '', '', '', ''
     ) on conflict (id) do nothing;
 
