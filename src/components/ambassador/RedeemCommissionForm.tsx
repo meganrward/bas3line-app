@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MAX_NOTE_LENGTH, validateCashAmount } from '../../lib/redeem.utils';
+import { formatAmountInput, MAX_NOTE_LENGTH, validateCashAmount } from '../../lib/redeem.utils';
 import { requestPayout } from '../../lib/queries';
 import { formatGBP } from '../../lib/sales.utils';
 
@@ -64,6 +64,7 @@ export function RedeemCommissionForm({ availableBalance, onRequested }: Readonly
           placeholder="0.00"
           value={amountInput}
           onChange={(event) => setAmountInput(event.target.value)}
+          onBlur={() => setAmountInput(formatAmountInput(amountInput))}
         />
         <p className="text-hint mt-1">
           {formatGBP(Math.max(availableBalance, 0))} available to request.

@@ -13,6 +13,7 @@ import {
   CommissionBalance,
   DiscountCodeSale,
   PadelClub,
+  PayoutQueueItem,
   PayoutRequest,
   PayoutType,
 } from './types';
@@ -295,5 +296,56 @@ export async function requestPayout(input: {
     p_note: input.note,
     p_kit_item_id: input.kitItemId,
   });
+  return { error: error?.message ?? null };
+}
+
+// ─── Payout review queue (sponsor) ─────────────────────────────────────────────
+
+export async function fetchPayoutQueue(): Promise<PayoutQueueItem[]> {
+  const [requestsResult, balancesResult] = await Promise.all([
+    (supabase as any)
+      .from('payout_requests')
+      .select(
+        'id, ambassador_id, request_type, amount, kit_credit_value, kit_item_name, kit_item_price, note, status, sponsor_note, created_at, ambassador:ambassador_profiles(profiles(full_name))',
+      )
+      .order('created_at', { ascending: false }),
+    (supabase as any).from('commission_balance').select('ambassador_id, balance'),
+  ]);
+
+  const balanceByAmbassador = new Map<string, number>(
+    ((balancesResult.data ?? []) as any[]).map((row) => [row.ambassador_id, Number(row.balance)]),
+  );
+
+  return ((requestsResult.data ?? []) as any[]).map((row) => {
+    const { ambassador, ...request } = row;
+    return {
+      ...request,
+      amount: Number(request.amount),
+      kit_credit_value: request.kit_credit_value == null ? null : Number(request.kit_credit_value),
+      kit_item_price: request.kit_item_price == null ? null : Number(request.kit_item_price),
+      ambassador_name: ambassador?.profiles?.full_name ?? null,
+      ambassador_balance: balanceByAmbassador.get(row.ambassador_id) ?? 0,
+    };
+  });
+}
+
+export async function approvePayout(requestId: string): Promise<{ error: string | null }> {
+  const { error } = await (supabase as any).rpc('approve_payout', { p_request_id: requestId });
+  return { error: error?.message ?? null };
+}
+
+export async function rejectPayout(
+  requestId: string,
+  sponsorNote: string | null,
+): Promise<{ error: string | null }> {
+  const { error } = await (supabase as any).rpc('reject_payout', {
+    p_request_id: requestId,
+    p_sponsor_note: sponsorNote,
+  });
+  return { error: error?.message ?? null };
+}
+
+export async function markPayoutPaid(requestId: string): Promise<{ error: string | null }> {
+  const { error } = await (supabase as any).rpc('mark_payout_paid', { p_request_id: requestId });
   return { error: error?.message ?? null };
 }

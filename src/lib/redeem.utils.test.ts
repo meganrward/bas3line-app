@@ -1,6 +1,7 @@
 import {
   calculateKitDiscount,
   describeRequest,
+  formatAmountInput,
   statusClassName,
   statusLabel,
   validateCashAmount,
@@ -143,5 +144,28 @@ describe('status helpers', () => {
     expect(statusClassName('rejected')).toBe('status-rejected');
     expect(statusClassName('approved')).toBe('status-approved');
     expect(statusClassName('paid')).toBe('status-approved');
+  });
+});
+
+describe('formatAmountInput', () => {
+  it('adds the pence', () => {
+    expect(formatAmountInput('20')).toBe('20.00');
+    expect(formatAmountInput('7.5')).toBe('7.50');
+    expect(formatAmountInput('0.5')).toBe('0.50');
+  });
+
+  it('leaves a complete amount as it is', () => {
+    expect(formatAmountInput('12.34')).toBe('12.34');
+  });
+
+  it('trims spaces around a valid amount', () => {
+    expect(formatAmountInput(' 20 ')).toBe('20.00');
+  });
+
+  it('leaves anything invalid untouched so the ambassador can see it', () => {
+    expect(formatAmountInput('')).toBe('');
+    expect(formatAmountInput('abc')).toBe('abc');
+    expect(formatAmountInput('1.005')).toBe('1.005');
+    expect(formatAmountInput('-5')).toBe('-5');
   });
 });

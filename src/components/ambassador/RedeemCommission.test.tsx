@@ -46,6 +46,17 @@ it('shows what is available and an empty history', async () => {
   expect(screen.getByText('No requests yet.')).toBeInTheDocument();
 });
 
+it('tidies the amount to pounds and pence when they leave the box', async () => {
+  givenCommission(50);
+  await renderSection();
+
+  const amount = screen.getByLabelText('Amount (£)');
+  await userEvent.type(amount, '20');
+  await userEvent.tab();
+
+  expect(amount).toHaveValue('20.00');
+});
+
 it('rejects a request over the balance without calling the server', async () => {
   givenCommission(12);
   await renderSection();

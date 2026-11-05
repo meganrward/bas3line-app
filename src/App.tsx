@@ -4,6 +4,7 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { RoleRedirect } from './components/auth/RoleRedirect';
 import { SponsorLayout } from './components/layout/SponsorLayout';
 import { AmbassadorLayout } from './components/layout/AmbassadorLayout';
+import { PayoutQueue } from './components/sponsor/PayoutQueue';
 import { AmbassadorsList } from './components/sponsor/AmbassadorsList';
 import { AddAmbassadorForm } from './components/sponsor/AddAmbassadorForm';
 import { AmbassadorDetail } from './components/sponsor/AmbassadorDetail';
@@ -31,6 +32,7 @@ export function App() {
           <Route path="ambassadors" element={<AmbassadorsList />} />
           <Route path="ambassadors/new" element={<AddAmbassadorForm />} />
           <Route path="ambassadors/:id" element={<AmbassadorDetail />} />
+          <Route path="payouts" element={<PayoutQueue />} />
         </Route>
 
         <Route

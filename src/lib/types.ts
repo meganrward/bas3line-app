@@ -91,6 +91,14 @@ export interface PayoutRequest {
   created_at: string;
 }
 
+// A payout request as the sponsor sees it: who asked, and what that ambassador's
+// commission balance is right now.
+export interface PayoutQueueItem extends PayoutRequest {
+  ambassador_id: string;
+  ambassador_name: string | null;
+  ambassador_balance: number;
+}
+
 export interface CommissionBalance {
   totalEarned: number;
   totalPaidOut: number;

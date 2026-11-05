@@ -16,6 +16,14 @@ function floorToPence(amount: number): number {
   return Math.floor(amount * 100 + 1e-9) / 100;
 }
 
+// Tidies an amount when the ambassador leaves the box: "20" becomes "20.00". Anything that
+// is not a valid amount is left alone, so they can see and fix what they typed.
+export function formatAmountInput(raw: string): string {
+  const trimmed = raw.trim();
+  if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) return raw;
+  return Number(trimmed).toFixed(2);
+}
+
 // Turns what the ambassador typed into pounds and pence, or an error to show them.
 export function validateCashAmount(raw: string, availableBalance: number): AmountCheck {
   const trimmed = raw.trim();

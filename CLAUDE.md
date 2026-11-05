@@ -14,9 +14,9 @@ Single-sponsor. One sponsor organisation, multiple ambassadors.
 
 ### Current state vs roadmap
 
-- **Built (sponsor):** ambassador list/add/edit (incl. team role, city/region, home club), FIP + LTA rankings, Instagram analytics tab, sales and commission tab, WooCommerce sales webhook.
+- **Built (sponsor):** ambassador list/add/edit (incl. team role, city/region, home club), FIP + LTA rankings, Instagram analytics tab, sales and commission tab, WooCommerce sales webhook, **Payouts** review queue (`/sponsor/payouts`: approve / reject / mark paid).
 - **Built (ambassador):** role-based login routing, `/ambassador/*` shell, **Your Profile** (details, edit bio / city / home club, rankings with refresh, Instagram connect link), **Your Sales** (totals, commission and history; refunded sales are shown but not counted), **Redeem commission** (bottom of the Sales tab: balance, cash payout request form, request history).
-- **Not built:** Your Progress, the sponsor review queue for payout requests (approve / reject / mark paid; the database functions exist, there is no page yet), a sponsor page to manage kit items, Marketplace (kit will be bought there, with commission offered as a discount at checkout; `kit_items` and the kit side of `request_payout` are already in the database for it). Those routes are "coming soon" placeholders. Instagram *connection status* needs Phase 3's `get-my-engagement`.
+- **Not built:** Your Progress, a sponsor page to manage kit items, Marketplace (kit will be bought there, with commission offered as a discount at checkout; `kit_items` and the kit side of `request_payout` are already in the database for it). Those routes are "coming soon" placeholders. Instagram *connection status* needs Phase 3's `get-my-engagement`.
 - **Roadmap phases:** 0 housekeeping/security (done), 1 ambassador shell (done), 2 profile (done, except the nightly ranking refresh), 3 progress, 4 sales, 5 cash or kit, 6 marketplace.
 - The old points/posts/vouchers design was dropped in `20260622000000_pivot_to_ambassadors.sql`. Don't resurrect it.
 
@@ -79,7 +79,7 @@ src/
     shared/         Logo, ClubPicker (club dropdown with inline "add a club"),
                     RankingsTable (read-only, or with Remove for sponsors)
     ambassador/     MyProfile (+ MyProfileEditForm, MyRankings), ComingSoon placeholder
-    sponsor/        AmbassadorsList, AddAmbassadorForm,
+    sponsor/        AmbassadorsList, AddAmbassadorForm, PayoutQueue (+ PayoutQueueRow),
                     AmbassadorDetail (tabs: Instagram, Rankings, Sales; edit panel),
                     SalesCommissions
   hooks/            useAuth.ts, usePadelClubs.ts, useRankings.ts (load + refresh FIP/LTA)
